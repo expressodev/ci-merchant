@@ -49,6 +49,7 @@ class Merchant extends CI_Driver_Library {
 		'Merchant_dps_pxpost',
 		'Merchant_dummy',
 		'Merchant_paypal',
+		'Merchant_paypal_pro',
 	);
 
 	public function __construct($driver = NULL)
