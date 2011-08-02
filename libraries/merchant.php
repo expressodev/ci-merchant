@@ -136,6 +136,7 @@ class Merchant extends CI_Driver_Library {
 	{
 		$adapter = $this->{$this->_adapter};
 		if (method_exists($adapter, '_process_return'))	return $adapter->_process_return();
+		else return new Merchant_response('failed', 'return_not_supported');
 	}
 }
 
