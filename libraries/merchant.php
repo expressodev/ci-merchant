@@ -50,6 +50,8 @@ class Merchant extends CI_Driver_Library {
 		'Merchant_dummy',
 		'Merchant_paypal',
 		'Merchant_paypal_pro',
+		'Merchant_eway',
+		'Merchant_eway_external',
 	);
 
 	public function __construct($driver = NULL)
