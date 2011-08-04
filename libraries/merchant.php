@@ -52,6 +52,7 @@ class Merchant extends CI_Driver_Library {
 		'Merchant_paypal_pro',
 		'Merchant_eway',
 		'Merchant_eway_external',
+		'Merchant_sagepay_direct',
 	);
 
 	public function __construct($driver = NULL)
