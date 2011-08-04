@@ -96,6 +96,11 @@ class Merchant_paypal_pro extends CI_Driver {
 					'&COUNTRYCODE='.$params['billing_country'].'&CURRENCYCODE='.$params['currency_code'].
 					'&IPADDRESS='.$params['ip_address'];
 
+		if ($params['card_type'] == 'Maestro' || $params['card_type'] == 'Solo')
+		{
+			$nvpstr .= '&ISSUENUMBER='.$params['card_issue_number'].'&STARTDATE'.$params['card_start_date'];
+		}
+
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $this->settings['test_mode'] ? self::API_ENDPOINT_TEST : self::API_ENDPOINT);
 		curl_setopt($ch, CURLOPT_VERBOSE, 1);
