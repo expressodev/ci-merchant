@@ -87,7 +87,7 @@ class Merchant_authorize_net_sim extends CI_Driver {
 		$response = new AuthorizeNetSIM($this->settings['api_login_id']);
   		if ($response->approved)
   		{
-			return new Merchant_response('authorized', 'payment_authorized', (string)$response->trans_id, (string)$response->amount);
+			return new Merchant_response('authorized', '', (string)$response->trans_id, (string)$response->amount);
 		}
 		elseif ($response->declined)
 		{

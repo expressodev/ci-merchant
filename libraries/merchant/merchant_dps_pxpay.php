@@ -69,15 +69,10 @@ class Merchant_dps_pxpay extends CI_Driver {
 			'<EnableAddBillCard>'.(int)$this->settings['enable_token_billing'].'</EnableAddBillCard>'.
 			'</GenerateRequest>';
 
-		$curl = curl_init(self::PROCESS_URL);
-		curl_setopt($curl, CURLOPT_HEADER, 0);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		$response = curl_exec($curl);
-		curl_close($curl);
+		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
 
-		$xml = simplexml_load_string($response);
+		$xml = simplexml_load_string($response['data']);
 
 		// redirect to hosted payment page
 		if (empty($xml) OR ! isset($xml->attributes()->valid))
@@ -105,20 +100,10 @@ class Merchant_dps_pxpay extends CI_Driver {
 			'<Response>'.$this->CI->input->get('result', TRUE).'</Response>'.
 			'</ProcessResponse>';
 
-		$curl = curl_init(self::PROCESS_URL);
-		curl_setopt($curl, CURLOPT_HEADER, 0);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
 
-		if ( ! empty($request))
-		{
-			if (is_array($request)) $request = http_build_query($request);
-			curl_setopt($curl, CURLOPT_POST, 1);
-			curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		}
-		$response = curl_exec($curl);
-		curl_close($curl);
-
-		$xml = simplexml_load_string($response);
+		$xml = simplexml_load_string($response['data']);
 		if ( ! isset($xml->Success))
 		{
 			return new Merchant_response('failed', 'invalid_response');
