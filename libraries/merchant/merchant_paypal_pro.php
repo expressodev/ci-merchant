@@ -44,8 +44,8 @@ class Merchant_paypal_pro extends CI_Driver {
 		'test_mode' => FALSE
 	);
 
-	const API_ENDPOINT = 'https://api-3t.paypal.com/nvp';
-	const API_ENDPOINT_TEST = 'https://api-3t.sandbox.paypal.com/nvp';
+	const PROCESS_URL = 'https://api-3t.paypal.com/nvp';
+	const PROCESS_URL_TEST = 'https://api-3t.sandbox.paypal.com/nvp';
 
 	public $CI;
 
@@ -94,7 +94,7 @@ class Merchant_paypal_pro extends CI_Driver {
 		if (isset($params['country'])) $data['COUNTRYCODE'] = strtoupper($params['country']);
 
 		// send request to paypal
-		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::API_ENDPOINT_TEST : self::API_ENDPOINT, $data);
+		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
 		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
 
 		$response_array = array();
