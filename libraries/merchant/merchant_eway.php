@@ -40,34 +40,17 @@ class Merchant_eway extends CI_Driver {
 	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
 
 	public $settings = array(
-		'eWAYCustomerID' => '',
+		'customer_id' => '',
 		'test_mode' => FALSE
 	);
 
 	public function _process($params)
 	{
-		if ($params['currency_code'] !== 'AUD')	// check currency code is AUD
-		{
-			return new Merchant_response('failed', 'Required field "currency_code" was not in AUD.');
-		}
-
-		if ($this->settings['test_mode'])
-		{
-			if ($params['card_no'] !== '4444333322221111')
-			{
-				return new Merchant_response('failed', 'Required field "card_no" was incorrect for test mode.');
-			}
-			elseif ($this->settings['eWAYCustomerID'] !== '87654321')
-			{
-				return new Merchant_response('failed', 'Required field "eWAYCustomerID" was incorrect for test mode.');
-			}
-		}
-
 		$params['exp_year'] = $params['exp_year'] % 100;
 		$params['amount'] = $params['amount'] * 100;
 
-		$xmlRequest = '<ewaygateway>'.
-	      		'<ewayCustomerID>'.$this->settings['eWAYCustomerID'].'</ewayCustomerID>'.
+		$request = '<ewaygateway>'.
+	      		'<ewayCustomerID>'.$this->settings['customer_id'].'</ewayCustomerID>'.
 	      		'<ewayTotalAmount>'.$params['amount'].'</ewayTotalAmount>'.
 	      		'<ewayCustomerInvoiceDescription>'.$params['reference'].'</ewayCustomerInvoiceDescription>'.
 	      		'<ewayCustomerInvoiceRef>'.$params['transaction_id'].'</ewayCustomerInvoiceRef>'.
@@ -87,27 +70,22 @@ class Merchant_eway extends CI_Driver {
 				'<ewayOption3></ewayOption3>'.
 			'</ewaygateway>';
 
-		$curl = curl_init($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $xmlRequest);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $request);
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
 
-		$response = curl_exec($curl);
-		curl_close($curl);
-		$xml = simplexml_load_string($response);
+		$xml = simplexml_load_string($response['data']);
 
 		if ( ! isset($xml->ewayTrxnStatus))
 		{
-			return new Merchant_response('failed', 'invalid_response - '.$xml);
+			return new Merchant_response('failed', 'invalid_response');
 		}
 		elseif ($xml->ewayTrxnStatus == 'True')
 		{
-			return new Merchant_response('authorized', 'AuthCode - '.(string)$xml->ewayAuthCode.', ErrorCode - '.(string)$xml->ewayTrxnError, (string)$xml->ewayTrxnReference, (string)$xml->ewayReturnAmount);
+			return new Merchant_response('authorized', (string)$xml->ewayAuthCode, (string)$xml->ewayTrxnReference, (string)$xml->ewayReturnAmount);
 		}
 		else
 		{
-			return new Merchant_response('declined', 'ErrorCode - '.(string)$xml->ewayTrxnError, (string)$xml->ewayTrxnReference);
+			return new Merchant_response('declined', (string)$xml->ewayTrxnError, (string)$xml->ewayTrxnReference);
 		}
 	}
 }
