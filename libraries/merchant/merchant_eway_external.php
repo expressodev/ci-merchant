@@ -37,14 +37,14 @@ class Merchant_eway_external extends CI_Driver {
 	public $required_fields = array('amount', 'currency_code', 'transaction_id', 'reference', 'return_url', 'cancel_url');
 
 	public $settings = array(
-		'eWAYCustomerID' => '',
-		'UserName' => '',
-		'CompanyName' => '',
-		'PageTitle' => '',
-		'PageDescription' => '',
-		'PageFooter' => '',
-		'CompanyLogo' => '',
-		'PageBanner' => '',
+		'customer_id' => '',
+		'username' => '',
+		'company_name' => '',
+		'page_title' => '',
+		'page_description' => '',
+		'page_footer' => '',
+		'company_logo' => '',
+		'page_banner' => '',
 		'test_mode' => FALSE
 	);
 
@@ -61,20 +61,20 @@ class Merchant_eway_external extends CI_Driver {
 		$params['return_url'] = str_replace('http://', 'https://', rtrim($params['return_url'], '/')).'.php';
 
 		$post_url  = self::PROCESS_URL;
-		$post_url .= '?CustomerID='.urlencode($this->settings['eWAYCustomerID']);
-		$post_url .= '&UserName='.urlencode($this->settings['UserName']);
+		$post_url .= '?CustomerID='.urlencode($this->settings['customer_id']);
+		$post_url .= '&UserName='.urlencode($this->settings['username']);
 		$post_url .= '&Amount='.urlencode($params['amount']);
 		$post_url .= '&Currency='.urlencode($params['currency_code']);
-		$post_url .= '&PageTitle='.urlencode($this->settings['PageTitle']);
-	    $post_url .= '&PageDescription='.urlencode($this->settings['PageDescription']);
-		$post_url .= '&PageFooter='.urlencode($this->settings['PageFooter']);
+		$post_url .= '&PageTitle='.urlencode($this->settings['page_title']);
+	    $post_url .= '&PageDescription='.urlencode($this->settings['page_description']);
+		$post_url .= '&PageFooter='.urlencode($this->settings['page_footer']);
 		$post_url .= '&Language=EN';
-		$post_url .= '&CompanyName='.urlencode($this->settings['CompanyName']);
+		$post_url .= '&CompanyName='.urlencode($this->settings['company_name']);
 		$post_url .= '&InvoiceDescription='.urlencode($params['reference']);
 		$post_url .= '&CancelUrl='.urlencode($params['cancel_url']);
 		$post_url .= '&ReturnUrl='.urlencode($params['return_url']);
-		$post_url .= '&CompanyLogo='.urlencode($this->settings['CompanyLogo']);
-		$post_url .= '&PageBanner='.urlencode($this->settings['PageBanner']);
+		$post_url .= '&CompanyLogo='.urlencode($this->settings['company_logo']);
+		$post_url .= '&PageBanner='.urlencode($this->settings['page_banner']);
 		$post_url .= '&MerchantReference='.urlencode($params['transaction_id']);
 		$post_url .= '&MerchantInvoice='.urlencode($params['reference']);
 		$post_url .= '&MerchantOption1=';
@@ -107,7 +107,7 @@ class Merchant_eway_external extends CI_Driver {
 	public function _process_return()
 	{
 		$post_url = self::PROCESS_RETURN_URL;
-		$post_url .= '?CustomerID='.urlencode($this->settings['ewayCustomerID']).'&UserName='.urlencode($this->settings['UserName']).'&AccessPaymentCode='.urlencode($_REQUEST['AccessPaymentCode']);
+		$post_url .= '?CustomerID='.urlencode($this->settings['customer_id']).'&UserName='.urlencode($this->settings['username']).'&AccessPaymentCode='.urlencode($_REQUEST['AccessPaymentCode']);
 
 		$curl = curl_init();
 		curl_setopt($curl, CURLOPT_URL, $post_url);
