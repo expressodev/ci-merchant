@@ -71,12 +71,13 @@ class Merchant_paypal extends CI_Driver {
 			'no_shipping' => 1
 		);
 
-		$url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+
 		?>
 <html><head><title>Redirecting...</title></head>
-<body onload="document.paypal.submit();">
-	<p>Please wait while we redirect you to the Paypal website...</p>
-	<form name="paypal" action="<?php echo $url; ?>" method="post">
+<body onload="document.payment.submit();">
+	<p>Please wait while we redirect you to the PayPal website...</p>
+	<form name="payment" action="<?php echo $post_url; ?>" method="post">
 		<?php foreach ($request as $key => $value): ?>
 			<input type="hidden" name="<?php echo $key; ?>" value="<?php echo htmlspecialchars($value); ?>" />
 		<?php endforeach ?>

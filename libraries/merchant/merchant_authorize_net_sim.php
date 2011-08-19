@@ -52,7 +52,7 @@ class Merchant_authorize_net_sim extends CI_Driver {
 
 	public function _process($params)
 	{
-		$form_url = ($this->settings['test_mode']) ? self::PROCESS_URL_TEST: self::PROCESS_URL;
+		$post_url = ($this->settings['test_mode']) ? self::PROCESS_URL_TEST: self::PROCESS_URL;
 		$fp_sequence = $params['reference'];
 		$time = time();
 		$fingerprint = AuthorizeNetSIM_Form::getFingerprint($this->settings['api_login_id'], $this->settings['transaction_key'], $params['amount'], $fp_sequence, $time);
@@ -69,15 +69,14 @@ class Merchant_authorize_net_sim extends CI_Driver {
 		);
 		$sim = new AuthorizeNetSIM_Form($post_data);
 ?>
-<html>
-	<head><title>Processing Payment...</title></head>
-	<body onLoad="document.forms['authorize_net_form'].submit();">
-	<form method="post" name="authorize_net_form" action="<?php echo $form_url; ?>">
-	<?php echo $sim->getHiddenFieldString(); ?>
-	<center><br/><br/>If you are not automatically redirected to Authorize.Net within 5 seconds...<br/><br/>
-	<input type="submit" value="Click Here"></input></center>
-	</form></body>
-</html>
+<html><head><title>Redirecting...</title></head>
+<body onload="document.payment.submit();">
+	<p>Please wait while we redirect you to the Authorize.net website...</p>
+	<form name="payment" action="<?php echo $post_url; ?>" method="post">
+		<?php echo $sim->getHiddenFieldString(); ?>
+		<p><input type="submit" value="Continue" /></p>
+	</form>
+</body></html>
 <?php
 		exit();
 	}
@@ -85,17 +84,18 @@ class Merchant_authorize_net_sim extends CI_Driver {
 	public function _process_return()
 	{
 		$response = new AuthorizeNetSIM($this->settings['api_login_id']);
+
   		if ($response->approved)
   		{
-			return new Merchant_response('authorized', '', (string)$response->trans_id, (string)$response->amount);
+			return new Merchant_response('authorized', (string)$response->response_reason_text, (string)$response->trans_id, (string)$response->amount);
 		}
 		elseif ($response->declined)
 		{
-			return new Merchant_response('failed', 'payment_declined');
+			return new Merchant_response('declined', (string)$response->response_reason_text);
 		}
 		else
 		{
-			return new Merchant_response('failed', 'payment_cancelled');
+			return new Merchant_response('failed', (string)$response->response_reason_text);
 		}
 	}
 }

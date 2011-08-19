@@ -61,7 +61,7 @@ class Merchant_authorize_net extends CI_Driver {
 
 		if ($response->approved)
 		{
-			return new Merchant_response('authorized', (string)$response->response_reason_text, (string)$response->transaction_id, $response->amount);
+			return new Merchant_response('authorized', (string)$response->response_reason_text, (string)$response->transaction_id, (string)$response->amount);
 		}
 		elseif ($response->declined)
 		{
