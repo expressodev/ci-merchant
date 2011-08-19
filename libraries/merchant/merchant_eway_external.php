@@ -32,6 +32,9 @@
 
 class Merchant_eway_external extends CI_Driver {
 
+	const PROCESS_URL = 'https://au.ewaygateway.com/Request/';
+	const PROCESS_RETURN_URL = 'https://au.ewaygateway.com/Result/';
+
 	public $name = 'eWAY External (Hosted)';
 
 	public $required_fields = array('amount', 'currency_code', 'transaction_id', 'reference', 'return_url', 'cancel_url');
@@ -45,91 +48,85 @@ class Merchant_eway_external extends CI_Driver {
 		'page_footer' => '',
 		'company_logo' => '',
 		'page_banner' => '',
-		'test_mode' => FALSE
 	);
 
-	const PROCESS_URL = 'https://au.ewaygateway.com/Request/';
-	const PROCESS_RETURN_URL = 'https://au.ewaygateway.com/Result/';
+	public $CI;
+
+	public function __construct()
+	{
+		$this->CI =& get_instance();
+	}
 
 	public function _process($params)
 	{
-		if ($params['currency_code'] !== 'AUD')	// check currency code is AUD
+		$this->CI->load->helper('url');
+
+		$data = array(
+			'CustomerID' => $this->settings['customer_id'],
+			'UserName' => $this->settings['username'],
+			'Amount' => sprintf('%01.2f', $params['amount']),
+			'Currency' => $params['currency_code'],
+			'PageTitle' => $this->settings['page_title'],
+			'PageDescription' => $this->settings['page_description'],
+			'PageFooter' => $this->settings['page_footer'],
+			'PageBanner' => $this->settings['page_banner'],
+			'Language' => 'EN',
+			'CompanyName' => $this->settings['company_name'],
+			'CompanyLogo' => $this->settings['company_logo'],
+			'CancelUrl' => $params['cancel_url'],
+			'ReturnUrl' => $params['return_url'],
+			'MerchantReference' => $params['reference'],
+		);
+
+		$response = Merchant::curl_helper(self::PROCESS_URL.'?'.http_build_query($data));
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+
+		$xml = simplexml_load_string($response['data']);
+
+		// redirect to payment page
+		if (empty($xml) OR ! isset($xml->Result))
 		{
-			return new Merchant_response('failed', 'Required field "currency_code" was not in AUD.');
+			return new Merchant_response('failed', 'invalid_response');
 		}
-		$params['cancel_url'] = str_replace('http://', 'https://', rtrim($params['cancel_url'], '/')).'.php';
-		$params['return_url'] = str_replace('http://', 'https://', rtrim($params['return_url'], '/')).'.php';
-
-		$post_url  = self::PROCESS_URL;
-		$post_url .= '?CustomerID='.urlencode($this->settings['customer_id']);
-		$post_url .= '&UserName='.urlencode($this->settings['username']);
-		$post_url .= '&Amount='.urlencode($params['amount']);
-		$post_url .= '&Currency='.urlencode($params['currency_code']);
-		$post_url .= '&PageTitle='.urlencode($this->settings['page_title']);
-	    $post_url .= '&PageDescription='.urlencode($this->settings['page_description']);
-		$post_url .= '&PageFooter='.urlencode($this->settings['page_footer']);
-		$post_url .= '&Language=EN';
-		$post_url .= '&CompanyName='.urlencode($this->settings['company_name']);
-		$post_url .= '&InvoiceDescription='.urlencode($params['reference']);
-		$post_url .= '&CancelUrl='.urlencode($params['cancel_url']);
-		$post_url .= '&ReturnUrl='.urlencode($params['return_url']);
-		$post_url .= '&CompanyLogo='.urlencode($this->settings['company_logo']);
-		$post_url .= '&PageBanner='.urlencode($this->settings['page_banner']);
-		$post_url .= '&MerchantReference='.urlencode($params['transaction_id']);
-		$post_url .= '&MerchantInvoice='.urlencode($params['reference']);
-		$post_url .= '&MerchantOption1=';
-		$post_url .= '&MerchantOption2=';
-		$post_url .= '&MerchantOption3=';
-		$post_url .= '&ModifiableCustomerDetails=';
-
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $post_url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($curl, CURLOPT_HEADER, 0);
-		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
-
-		$response = curl_exec($curl);
-		curl_close($curl);
-
-		$xml = simplexml_load_string($response);
-
-		if ($xml->Result == 'True')
+		elseif ($xml->Result == 'True')
 		{
-			header("location: ".$xml->URI);
-		  	exit;
+			redirect((string)$xml->URI);
 		}
 		else
 		{
-			return new Merchant_response('failed', 'Error - '.(string)$xml->Error, (string)$params['transaction_id']);
+			return new Merchant_response('failed', (string)$xml->Error);
 		}
 	}
 
 	public function _process_return()
 	{
-		$post_url = self::PROCESS_RETURN_URL;
-		$post_url .= '?CustomerID='.urlencode($this->settings['customer_id']).'&UserName='.urlencode($this->settings['username']).'&AccessPaymentCode='.urlencode($_REQUEST['AccessPaymentCode']);
+		if (($payment_code = $this->CI->input->get_post('AccessPaymentCode')) === FALSE)
+		{
+			return new Merchant_response('failed', 'invalid_response');
+		}
 
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $post_url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($curl, CURLOPT_HEADER, 0);
-		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+		$data = array(
+			'CustomerID' => $this->settings['customer_id'],
+			'UserName' => $this->settings['username'],
+			'AccessPaymentCode' => $_REQUEST['AccessPaymentCode'],
+		);
 
-		$response = curl_exec($curl);
-		curl_close($curl);
-		$xml = simplexml_load_string($response);
+		$response = Merchant::curl_helper(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+
+		$xml = simplexml_load_string($response['data']);
 
 		if ( ! isset($xml->TrxnStatus))
 		{
-			return new Merchant_response('failed', 'invalid_response - '.$xml);
+			return new Merchant_response('failed', 'invalid_response');
 		}
 		elseif ($xml->TrxnStatus == 'True')
 		{
-			return new Merchant_response('authorized', 'AuthCode - '.(string)$xml->AuthCode.', ResponseCode - '.(string)$xml->ResponseCode.', ResponseMessage - '.$xml->TrxnResponseMessage, (string)$xml->MerchantReference, (string)$xml->ReturnAmount);
+			return new Merchant_response('authorized', '', (string)$xml->TrxnNumber, (double)$xml->ReturnAmount);
 		}
 		else
 		{
-			return new Merchant_response('declined', 'ErrorCode - '.(string)$xml->ResponseCode.', ErrorMessage - '.$xml->ErrorMessage, (string)$xml->MerchantReference);
+			return new Merchant_response('declined', (string)$xml->TrxnResponseMessage, (string)$xml->TrxnNumber);
 		}
 	}
 }

@@ -46,18 +46,18 @@ class Merchant_eway extends CI_Driver {
 
 	public function _process($params)
 	{
-		$params['exp_year'] = $params['exp_year'] % 100;
-		$params['amount'] = $params['amount'] * 100;
+		// eway thows HTML formatted error if customerid is missing
+		if (empty($this->settings['customer_id'])) return new Merchant_response('failed', 'Missing Customer ID!');
 
 		$request = '<ewaygateway>'.
 	      		'<ewayCustomerID>'.$this->settings['customer_id'].'</ewayCustomerID>'.
-	      		'<ewayTotalAmount>'.$params['amount'].'</ewayTotalAmount>'.
+	      		'<ewayTotalAmount>'.sprintf('%01d', $params['amount'] * 100).'</ewayTotalAmount>'.
 	      		'<ewayCustomerInvoiceDescription>'.$params['reference'].'</ewayCustomerInvoiceDescription>'.
 	      		'<ewayCustomerInvoiceRef>'.$params['transaction_id'].'</ewayCustomerInvoiceRef>'.
 	      		'<ewayCardHoldersName>'.$params['card_name'].'</ewayCardHoldersName>'.
 	      		'<ewayCardNumber>'.$params['card_no'].'</ewayCardNumber>'.
 	      		'<ewayCardExpiryMonth>'.$params['exp_month'].'</ewayCardExpiryMonth>'.
-	      		'<ewayCardExpiryYear>'.$params['exp_year'].'</ewayCardExpiryYear>'.
+	      		'<ewayCardExpiryYear>'.($params['exp_year'] % 100).'</ewayCardExpiryYear>'.
 	      		'<ewayTrxnNumber>'.$params['transaction_id'].'</ewayTrxnNumber>'.
 	      		'<ewayCVN>'.$params['csc'].'</ewayCVN>'.
 				'<ewayCustomerFirstName></ewayCustomerFirstName>'.
@@ -81,11 +81,11 @@ class Merchant_eway extends CI_Driver {
 		}
 		elseif ($xml->ewayTrxnStatus == 'True')
 		{
-			return new Merchant_response('authorized', (string)$xml->ewayAuthCode, (string)$xml->ewayTrxnReference, (string)$xml->ewayReturnAmount);
+			return new Merchant_response('authorized', (string)$xml->ewayTrxnError, (string)$xml->ewayTrxnNumber, ((double)$xml->ewayReturnAmount) / 100);
 		}
 		else
 		{
-			return new Merchant_response('declined', (string)$xml->ewayTrxnError, (string)$xml->ewayTrxnReference);
+			return new Merchant_response('declined', (string)$xml->ewayTrxnError);
 		}
 	}
 }
