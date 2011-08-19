@@ -34,7 +34,7 @@ class Merchant_dps_pxpay extends CI_Driver {
 
 	const PROCESS_URL = 'https://sec.paymentexpress.com/pxpay/pxaccess.aspx';
 
-	public $name = 'DPS PaymentExpress PxPay (Hosted)';
+	public $name = 'DPS PaymentExpress PxPay';
 
 	public $required_fields = array('email', 'amount', 'reference', 'currency_code', 'return_url', 'cancel_url');
 
