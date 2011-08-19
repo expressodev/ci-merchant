@@ -43,11 +43,11 @@ class Merchant_eway_shared extends CI_Driver {
 		'customer_id' => '',
 		'username' => '',
 		'company_name' => '',
+		'company_logo' => '',
 		'page_title' => '',
+		'page_banner' => '',
 		'page_description' => '',
 		'page_footer' => '',
-		'company_logo' => '',
-		'page_banner' => '',
 	);
 
 	public $CI;
