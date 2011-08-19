@@ -70,9 +70,8 @@ class Merchant_paypal_pro extends CI_Driver {
 			'VERSION' => '65.1',
 			'METHOD' => 'doDirectPayment',
 			'PAYMENTACTION' => 'Sale',
-			'AMT' => $params['amount'],
+			'AMT' => sprintf('%01.2f', $params['amount']),
 			'CURRENCYCODE' => $params['currency_code'],
-			'CREDITCARDTYPE' => $params['card_type'],
 			'ACCT' => $params['card_no'],
 			'EXPDATE' => $params['exp_month'].$params['exp_year'],
 			'CVV2' => $params['csc'],
@@ -80,6 +79,12 @@ class Merchant_paypal_pro extends CI_Driver {
 			'FIRSTNAME' => $card_name[0],
 			'LASTNAME' => isset($card_name[1]) ? $card_name[1] : '',
 		);
+
+		if (isset($params['card_type']))
+		{
+			$data['CREDITCARDTYPE'] = ucfirst($params['card_type']);
+			if ($data['CREDITCARDTYPE'] == 'Mastercard') $data['CREDITCARDTYPE'] = 'MasterCard';
+		}
 
 		if (isset($params['card_issue'])) $data['ISSUENUMBER'] = $params['card_issue'];
 		if (isset($params['start_month']) AND isset($params['start_year']))
@@ -100,11 +105,13 @@ class Merchant_paypal_pro extends CI_Driver {
 		$response_array = array();
 		parse_str($response['data'], $response_array);
 
-		if (empty($response_array['ACK'])) return new Merchant_response('failed', 'invalid_response');
-
-		if ($response_array['ACK'] == 'Success' OR $response_array['ACK'] == 'SuccessWithWarning')
+		if (empty($response_array['ACK']))
 		{
-			return new Merchant_response('authorized', '', $response_array['TRANSACTIONID'], $response_array['AMT']);
+			return new Merchant_response('failed', 'invalid_response');
+		}
+		elseif ($response_array['ACK'] == 'Success' OR $response_array['ACK'] == 'SuccessWithWarning')
+		{
+			return new Merchant_response('authorized', '', $response_array['TRANSACTIONID'], (double)$response_array['AMT']);
 		}
 		elseif ($response_array['ACK'] == 'Failure' OR $response_array['ACK'] == 'FailureWithWarning')
 		{

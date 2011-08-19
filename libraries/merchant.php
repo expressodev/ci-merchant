@@ -135,6 +135,9 @@ class Merchant extends CI_Driver_Library {
 		if (isset($params['start_month'])) $params['start_month'] = sprintf('%02d', (int)$params['start_month']);
 		if (isset($params['start_year'])) $params['start_year'] = sprintf('%04d', (int)$params['start_year']);
 
+		// normalize card_type to lowercase
+		if (isset($params['card_type'])) $params['card_type'] = strtolower($params['card_type']);
+
 		return $this->{$this->_adapter}->_process($params);
 	}
 
