@@ -110,7 +110,7 @@ class Merchant_dps_pxpay extends CI_Driver {
 		}
 		elseif ($xml->Success == '1')
 		{
-			return new Merchant_response('authorized', (string)$xml->ResponseText, (string)$xml->DpsTxnRef, (string)$xml->AmountSettlement);
+			return new Merchant_response('authorized', (string)$xml->ResponseText, (string)$xml->DpsTxnRef, (double)$xml->AmountSettlement);
 		}
 		else
 		{
