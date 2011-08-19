@@ -30,12 +30,12 @@
  * Payment processing using eWAY's Secure Hosted Page
  */
 
-class Merchant_eway_external extends CI_Driver {
+class Merchant_eway_shared extends CI_Driver {
 
 	const PROCESS_URL = 'https://au.ewaygateway.com/Request/';
 	const PROCESS_RETURN_URL = 'https://au.ewaygateway.com/Result/';
 
-	public $name = 'eWAY External (Hosted)';
+	public $name = 'eWAY Shared';
 
 	public $required_fields = array('amount', 'currency_code', 'transaction_id', 'reference', 'return_url', 'cancel_url');
 
@@ -131,4 +131,4 @@ class Merchant_eway_external extends CI_Driver {
 	}
 }
 
-/* End of file ./libraries/merchant/drivers/merchant_eway_external.php */
+/* End of file ./libraries/merchant/drivers/merchant_eway_shared.php */
