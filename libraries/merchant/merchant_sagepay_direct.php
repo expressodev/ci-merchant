@@ -36,98 +36,68 @@ class Merchant_sagepay_direct extends CI_Driver {
 
 	const PROCESS_URL = 'https://live.sagepay.com/gateway/service/vspdirect-register.vsp';
 	const PROCESS_URL_TEST = 'https://test.sagepay.com/gateway/service/vspdirect-register.vsp';
-	const PROCESS_URL_SANDBOX = 'https://test.sagepay.com/simulator/VSPDirectGateway.asp';
-	const VPS_PROTOCOL = '2.23';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'card_type', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
+	// the simulator URL is only used for plugin development
+	const PROCESS_URL_SIM = 'https://test.sagepay.com/Simulator/VSPDirectGateway.asp';
+
+	public $required_fields = array('amount', 'card_no', 'card_name', 'card_type',
+		'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
 
 	public $settings = array(
-		'Vendor' => '',
-		'PartnerID' => '',
+		'vendor' => '',
 		'test_mode' => FALSE
 	);
 
 	public function _process($params)
 	{
-		if ($params['card_type'] == 'Visa') $params['card_type'] = 'VISA';
-		if ($params['card_type'] == 'Mastercard') $params['card_type'] = 'MC';
-		if ($params['card_type'] == 'Amex') $params['card_type'] = 'AMEX';
-		if ($params['card_type'] == 'Maestro') $params['card_type'] = 'MAESTRO';
-		if ($params['card_type'] == 'Solo') $params['card_type'] = 'VISA';
-		if ($params['card_type'] == 'Discover') $params['card_type'] = 'VISA';
+		$data = array(
+			'VPSProtocol' => '2.23',
+			'TxType' => 'PAYMENT',
+			'Vendor' => $this->settings['vendor'],
+			'VendorTxCode' => $params['transaction_id'],
+			'Description' => $params['reference'],
+			'Amount' => sprintf('%01.2f', $params['amount']),
+			'Currency' => $params['currency_code'],
+			'CardHolder' => $params['card_name'],
+			'CardNumber' => $params['card_no'],
+			'CV2' => $params['csc'],
+			'CardType' => strtoupper($params['card_type']),
+			'ExpiryDate' => $params['exp_month'].($params['exp_year'] % 100),
+			'AccountType' => 'E',
+			'ApplyAVSCV2' => 2,
+		);
 
-		$params['exp_year'] = $params['exp_year'] % 100;
-		$expiry_date = $params['exp_month'].$params['exp_year'];
+		if ($data['CardType'] == 'MASTERCARD') $data['CardType'] = 'MC';
 
-		$request = 'VPSProtocol='.self::VPS_PROTOCOL;
-		$request .= '&TxType=PAYMENT';
-		$request .= '&Vendor='.$this->settings['Vendor'];
-		$request .= '&VendorTxCode='.$params['transaction_id'];
-
-		// Optional: If you are a Sage Pay Partner and wish to flag the transactions with your unique partner id, it should be passed here
-		if ( ! empty($this->settings['PartnerID'])) $request .= '&ReferrerID='.urlencode($this->settings['PartnerID']);
-
-		$request .= '&Amount='.$params['amount'];
-		$request .= '&Currency='.$params['currency_code'];
-		$request .= '&CardHolder='.$params['card_name'];
-		$request .= '&CardNumber='.$params['card_no'];
-		$request .= '&CV2='.$params['csc'];
-		$request .= '&CardType='.$params['card_type'];
-		$request .= '&ExpiryDate='.$expiry_date;
-		if (! empty($params['card_issue_number'])) $request .= '&IssueNumber='.$params['card_issue_number'];
-		if (! empty($params['card_start_date'])) $request .= '&StartDate='.$params['card_start_date'];
-		$request .= '&AccountType=E';
-
-		$curl = curl_init($this->settings['test_mode'] ? self::PROCESS_URL_SANDBOX : self::PROCESS_URL);
-
-		curl_setopt($curl, CURLOPT_HEADER, 0);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER,1);
-		curl_setopt($curl, CURLOPT_TIMEOUT,30);
-    	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-    	curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 1);
-
-		$response = curl_exec($curl);
-		if (curl_error($curl)) return new Merchant_response('failed', 'invalid_response - '.curl_error($curl));
-		curl_close($curl);
-
-		$response = explode("\n", $response);
-
-		$output = array();
-		foreach ($response as $nvp)
+		if ( ! empty($params['card_issue'])) $data['IssueNumber'] = $params['card_issue'];
+		if ( ! empty($params['start_month']) AND ! empty($params['start_year']))
 		{
-			$splitAt = strpos($nvp, "=");
-			$output[trim(substr($nvp, 0, $splitAt))] = trim(substr($nvp, ($splitAt+1)));
+			$data['StartDate'] = $params['start_month'].($params['start_year'] % 100);
 		}
 
-		if ($output['Status'] == 'OK')
+		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+
+		// convert weird ini-type format to a useful array
+		$response_array = explode("\n", $response['data']);
+		foreach ($response_array as $key => $value)
 		{
-			return new Merchant_response('authorized', (string)$output['StatusDetail'], (string)$output['VPSTxId'], (string)$params['amount']);
+			unset($response_array[$key]);
+			$line = explode('=', $value, 2);
+			$response_array[trim($line[0])] = isset($line[1]) ? trim($line[1]) : '';
 		}
-		elseif ($output['Status'] == 'MALFORMED')
+
+		if (empty($response_array['Status']))
 		{
-			return new Merchant_response('invalid', 'MALFORMED - '.$output['StatusDetail']);
+			return new Merchant_response('failed', 'invalid_response');
 		}
-		elseif ($output['Status'] == 'INVALID')
+		elseif ($response_array['Status'] == 'OK')
 		{
-			return new Merchant_response('invalid', 'INVALID - '.$output['StatusDetail']);
-		}
-		elseif ($output['Status'] == 'NOTAUTHED')
-		{
-			return new Merchant_response('declined', 'DECLINED - The transaction was not authorised by the bank.');
-		}
-		elseif ($output['Status'] == 'REJECTED')
-		{
-			return new Merchant_response('declined', 'REJECTED - The transaction was failed by your 3D-Secure or AVS/CV2 rule-bases.');
-		}
-		elseif ($output['Status'] == 'ERROR')
-		{
-			return new Merchant_response('invalid', 'ERROR - '.$output['StatusDetail']);
+			return new Merchant_response('authorized', $response_array['StatusDetail'], $response_array['VPSTxId'], (double)$params['amount']);
 		}
 		else
 		{
-			return new Merchant_response('invalid', 'UNKNOWN - '.$output['StatusDetail']);
+			return new Merchant_response('declined', $response_array['StatusDetail']);
 		}
 	}
 }
