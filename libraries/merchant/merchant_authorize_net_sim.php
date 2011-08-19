@@ -52,22 +52,32 @@ class Merchant_authorize_net_sim extends CI_Driver {
 
 	public function _process($params)
 	{
-		$post_url = ($this->settings['test_mode']) ? self::PROCESS_URL_TEST: self::PROCESS_URL;
 		$fp_sequence = $params['reference'];
 		$time = time();
-		$fingerprint = AuthorizeNetSIM_Form::getFingerprint($this->settings['api_login_id'], $this->settings['transaction_key'], $params['amount'], $fp_sequence, $time);
-		$post_data = array(
-			'x_amount'				=> $params['amount'],
-			'x_delim_data'			=> 'FALSE',
-			'x_fp_sequence'			=> $fp_sequence,
-			'x_fp_hash'				=> $fingerprint,
-			'x_fp_timestamp'		=> $time,
-			'x_relay_response'		=> 'TRUE',
-			'x_relay_url'			=> $params['return_url'],
-			'x_login'				=> $this->settings['api_login_id'],
-			'x_show_form'			=> 'PAYMENT_FORM'
+
+		$fingerprint = AuthorizeNetSIM_Form::getFingerprint(
+			$this->settings['api_login_id'],
+			$this->settings['transaction_key'],
+			$params['amount'],
+			$fp_sequence,
+			$time
 		);
-		$sim = new AuthorizeNetSIM_Form($post_data);
+
+		$data = array(
+			'x_amount' => $params['amount'],
+			'x_delim_data' => 'FALSE',
+			'x_fp_sequence' => $fp_sequence,
+			'x_fp_hash' => $fingerprint,
+			'x_fp_timestamp' => $time,
+			'x_relay_response' => 'TRUE',
+			'x_relay_url' => $params['return_url'],
+			'x_login' => $this->settings['api_login_id'],
+			'x_show_form' => 'PAYMENT_FORM',
+		);
+
+		$sim = new AuthorizeNetSIM_Form($data);
+
+		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST: self::PROCESS_URL;
 ?>
 <html><head><title>Redirecting...</title></head>
 <body onload="document.payment.submit();">
