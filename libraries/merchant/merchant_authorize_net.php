@@ -50,7 +50,7 @@ class Merchant_authorize_net extends CI_Driver {
 	public function _process($params)
 	{
 		$transaction = new AuthorizeNetAIM($this->settings['api_login_id'],$this->settings['transaction_key']);
-		$transaction->amount = sprintf('%01.2f', $params['amount']);
+		$transaction->amount = $params['amount'];
 		$transaction->card_num = $params['card_no'];
 		$transaction->exp_date = $params['exp_month'].$params['exp_year'];
 		$transaction->card_code = $params['csc'];
@@ -61,15 +61,15 @@ class Merchant_authorize_net extends CI_Driver {
 
 		if ($response->approved)
 		{
-			return new Merchant_response('authorized', (string)$response->response_reason_text, (string)$response->transaction_id, $response->amount);
+			return new Merchant_response('authorized', $response->response_reason_text, $response->transaction_id, (double)$response->amount);
 		}
 		elseif ($response->declined)
 		{
-			return new Merchant_response('declined', (string)$response->response_reason_text);
+			return new Merchant_response('declined', $response->response_reason_text);
 		}
 		else
 		{
-			return new Merchant_response('failed', (string)$response->response_reason_text);
+			return new Merchant_response('failed', $response->response_reason_text);
 		}
 	}
 }

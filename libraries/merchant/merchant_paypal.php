@@ -71,20 +71,19 @@ class Merchant_paypal extends CI_Driver {
 			'no_shipping' => 1
 		);
 
-		$url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+
 		?>
-<html>
-	<head><title>Processing Payment...</title></head>
-	<body onLoad="document.forms['paypal_form'].submit();">
-	<center><h2>Please wait, your order is being processed and you will be redirected to the PayPal website.</h2></center>
-	<form method="post" name="paypal_form" action="<?php echo $url; ?>">
-	<?php foreach ($request as $key => $value): ?>
-		<input type="hidden" name="<?php echo $key; ?>" value="<?php echo $value; ?>"/>
-	<?php endforeach ?>
-	<center><br/><br/>If you are not automatically redirected to PayPal within 5 seconds...<br/><br/>
-	<input type="submit" value="Click Here"></center>
-	</form></body>
-</html>
+<html><head><title>Redirecting...</title></head>
+<body onload="document.payment.submit();">
+	<p>Please wait while we redirect you to the PayPal website...</p>
+	<form name="payment" action="<?php echo $post_url; ?>" method="post">
+		<?php foreach ($request as $key => $value): ?>
+			<input type="hidden" name="<?php echo $key; ?>" value="<?php echo htmlspecialchars($value); ?>" />
+		<?php endforeach ?>
+		<p><input type="submit" value="Continue" /></p>
+	</form>
+</body></html>
 	<?php
 		exit();
 	}
@@ -97,34 +96,27 @@ class Merchant_paypal extends CI_Driver {
 
 		if ($action === 'success') return new Merchant_response('return', '', $_POST['txn_id']);
 
-		if($action === 'cancel') return new Merchant_response('failed', 'payment_cancelled');
+		if ($action === 'cancel') return new Merchant_response('failed', 'payment_cancelled');
 
 		if ($action === 'ipn')
 		{
 			// generate the post string from _POST
-			$memo = $this->CI->input->post('memo');
 			$post_string = 'cmd=_notify-validate&'.http_build_query($_POST);
 
-			$curl = curl_init();
-        	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        	curl_setopt($curl, CURLOPT_POST, 1);
-        	curl_setopt($curl, CURLOPT_HEADER , 0);
-        	curl_setopt($curl, CURLOPT_VERBOSE, 1);
-        	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-        	curl_setopt($curl, CURLOPT_TIMEOUT, 30);
-        	curl_setopt($curl, CURLOPT_URL, $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL);
-        	curl_setopt($curl, CURLOPT_POSTFIELDS, $post_string);
-        	curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded', 'Content-Length: '.strlen($post_string)));
-        	$response = curl_exec($curl);
+			$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $post_string);
+			if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
 
-			if (strpos("VERIFIED", $response) !== FALSE)
-			{   // Valid IPN transaction.
-				return new Merchant_response('authorized', 'payment_authorized - memo='.$memo, $_POST['txn_id'], (string)$_POST['mc_gross']);
+			$memo = $this->CI->input->post('memo');
+			if (strpos("VERIFIED", $response['data']) !== FALSE)
+			{
+				// Valid IPN transaction.
+				return new Merchant_response('authorized', $memo, $_POST['txn_id'], (string)$_POST['mc_gross']);
       		}
 			else
-			{   // Invalid IPN transaction
-				return new Merchant_response('failed', 'invalid_response');
-      		}
+			{
+				// Invalid IPN transaction
+				return new Merchant_response('declined', $memo);
+			}
 		}
 	}
 }

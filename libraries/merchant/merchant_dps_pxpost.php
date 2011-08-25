@@ -64,15 +64,10 @@ class Merchant_dps_pxpost extends CI_Driver {
 				'<EnableAddBillCard>'.(int)$this->settings['enable_token_billing'].'</EnableAddBillCard>'.
 			'</Txn>';
 
-		$curl = curl_init(self::PROCESS_URL);
-		curl_setopt($curl, CURLOPT_HEADER, 0);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
 
-		$response = curl_exec($curl);
-		curl_close($curl);
-		$xml = simplexml_load_string($response);
+		$xml = simplexml_load_string($response['data']);
 
 		if ( ! isset($xml->Success))
 		{

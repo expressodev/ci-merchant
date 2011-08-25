@@ -49,6 +49,10 @@ class Merchant extends CI_Driver_Library {
 		'Merchant_dps_pxpost',
 		'Merchant_dummy',
 		'Merchant_paypal',
+		'Merchant_paypal_pro',
+		'Merchant_eway',
+		'Merchant_eway_shared',
+		'Merchant_sagepay_direct',
 	);
 
 	public function __construct($driver = NULL)
@@ -112,21 +116,27 @@ class Merchant extends CI_Driver_Library {
 			show_error('Card details were not submitted over a secure connection.');
 		}
 
-		$field_check = FALSE;
 		if (is_array($this->{$this->_adapter}->required_fields))
 		{
 			foreach ($this->{$this->_adapter}->required_fields as $field_name)
 			{
-				if (empty($params[$field_name])) $field_check = $field_name;
+				if (empty($params[$field_name]))
+				{
+					$response = new Merchant_response('failed', 'field_missing');
+					$response->error_field = $field_name;
+					return $response;
+				}
 			}
 		}
 
-		if ($field_check !== FALSE)
-		{
-			$response = new Merchant_response('failed', 'field_missing');
-			$response->error_field = $field_check;
-			return $response;
-		}
+		// normalize months to 2 digits and years to 4
+		if (isset($params['exp_month'])) $params['exp_month'] = sprintf('%02d', (int)$params['exp_month']);
+		if (isset($params['exp_year'])) $params['exp_year'] = sprintf('%04d', (int)$params['exp_year']);
+		if (isset($params['start_month'])) $params['start_month'] = sprintf('%02d', (int)$params['start_month']);
+		if (isset($params['start_year'])) $params['start_year'] = sprintf('%04d', (int)$params['start_year']);
+
+		// normalize card_type to lowercase
+		if (isset($params['card_type'])) $params['card_type'] = strtolower($params['card_type']);
 
 		return $this->{$this->_adapter}->_process($params);
 	}
@@ -135,6 +145,38 @@ class Merchant extends CI_Driver_Library {
 	{
 		$adapter = $this->{$this->_adapter};
 		if (method_exists($adapter, '_process_return'))	return $adapter->_process_return();
+		else return new Merchant_response('failed', 'return_not_supported');
+	}
+
+	/**
+	 * Curl helper function
+	 *
+	 * Let's keep our cURLs consistent
+	 */
+	public static function curl_helper($url, $post_data = NULL)
+	{
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // don't check client certificate
+
+		if ($post_data !== NULL)
+		{
+			if (is_array($post_data))
+			{
+				$post_data = http_build_query($post_data);
+			}
+
+			curl_setopt($ch, CURLOPT_POST, TRUE);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+		}
+
+		$response = array();
+		$response['data'] = curl_exec($ch);
+		$response['error'] = curl_error($ch);
+
+		curl_close($ch);
+		return $response;
 	}
 }
 
