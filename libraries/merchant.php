@@ -43,6 +43,7 @@ class Merchant extends CI_Driver_Library {
 	protected $_adapter;
 
 	public $valid_drivers = array(
+		'Merchant_2checkout',
 		'Merchant_authorize_net',
 		'Merchant_authorize_net_sim',
 		'Merchant_dps_pxpay',
