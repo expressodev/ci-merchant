@@ -43,6 +43,7 @@ class Merchant extends CI_Driver_Library {
 	protected $_adapter;
 
 	public $valid_drivers = array(
+		'Merchant_2checkout',
 		'Merchant_authorize_net',
 		'Merchant_authorize_net_sim',
 		'Merchant_dps_pxpay',
@@ -177,6 +178,37 @@ class Merchant extends CI_Driver_Library {
 
 		curl_close($ch);
 		return $response;
+	}
+
+	/**
+	 * Redirect Post function
+	 *
+	 * Automatically redirect the user to payment pages which require POST data
+	 */
+	public static function redirect_post($post_url, $data)
+	{
+		?>
+<!DOCTYPE html>
+<html>
+<head><title>Redirecting...</title></head>
+<body onload="document.payment.submit();">
+	<p>Please wait while we redirect you to the payment page...</p>
+	<form name="payment" action="<?php echo htmlspecialchars($post_url); ?>" method="post">
+		<p>
+			<?php if (is_array($data)): ?>
+				<?php foreach ($data as $key => $value): ?>
+					<input type="hidden" name="<?php echo $key; ?>" value="<?php echo htmlspecialchars($value); ?>" />
+				<?php endforeach ?>
+			<?php else: ?>
+				<?php echo $data; ?>
+			<?php endif; ?>
+			<input type="submit" value="Continue" />
+		</p>
+	</form>
+</body>
+</html>
+	<?php
+		exit();
 	}
 }
 
