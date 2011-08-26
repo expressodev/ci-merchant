@@ -58,7 +58,7 @@ class Merchant_2checkout extends CI_Driver {
 	public function _process($params)
 	{
 		// post data to 2checkout
-		$request = array(
+		$data = array(
 			'sid' => $this->settings['account_no'],
 			'cart_order_id' => $params['reference'],
 			'total' => $params['amount'],
@@ -67,9 +67,26 @@ class Merchant_2checkout extends CI_Driver {
       		'x_Receipt_Link_URL' => $params['return_url'],
 		);
 
+		foreach (array(
+			'card_holder_name' => 'card_name',
+			'street_address' => 'address',
+			'street_address2' => 'address2',
+			'city' => 'city',
+			'state' => 'region',
+			'zip' => 'postcode',
+			'country' => 'country',
+			'phone' => 'phone',
+			'email' => 'email') as $key => $field)
+		{
+			if (isset($params[$field]))
+			{
+				$data[$key] = $params[$field];
+			}
+		}
+
 		if ($this->settings['test_mode'])
 		{
-			$request['demo'] = 'Y';
+			$data['demo'] = 'Y';
 		}
 
 		?>
@@ -77,7 +94,7 @@ class Merchant_2checkout extends CI_Driver {
 <body onload="document.payment.submit();">
 	<p>Please wait while we redirect you to the 2Checkout website...</p>
 	<form name="payment" action="<?php echo self::PROCESS_URL; ?>" method="post">
-		<?php foreach ($request as $key => $value): ?>
+		<?php foreach ($data as $key => $value): ?>
 			<input type="hidden" name="<?php echo $key; ?>" value="<?php echo htmlspecialchars($value); ?>" />
 		<?php endforeach ?>
 		<p><input type="submit" value="Continue" /></p>
