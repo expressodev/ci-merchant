@@ -78,17 +78,7 @@ class Merchant_authorize_net_sim extends CI_Driver {
 		$sim = new AuthorizeNetSIM_Form($data);
 
 		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST: self::PROCESS_URL;
-?>
-<html><head><title>Redirecting...</title></head>
-<body onload="document.payment.submit();">
-	<p>Please wait while we redirect you to the Authorize.net website...</p>
-	<form name="payment" action="<?php echo $post_url; ?>" method="post">
-		<?php echo $sim->getHiddenFieldString(); ?>
-		<p><input type="submit" value="Continue" /></p>
-	</form>
-</body></html>
-<?php
-		exit();
+		Merchant::redirect_post($post_url, $sim->getHiddenFieldString());
 	}
 
 	public function _process_return()

@@ -58,7 +58,7 @@ class Merchant_paypal extends CI_Driver {
 	public function _process($params)
 	{
 		// ask paypal to generate request url
-		$request = array(
+		$data = array(
 			'rm' => '2',
 			'cmd' => '_xclick',
 			'business' => $this->settings['paypal_email'],
@@ -72,20 +72,7 @@ class Merchant_paypal extends CI_Driver {
 		);
 
 		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
-
-		?>
-<html><head><title>Redirecting...</title></head>
-<body onload="document.payment.submit();">
-	<p>Please wait while we redirect you to the PayPal website...</p>
-	<form name="payment" action="<?php echo $post_url; ?>" method="post">
-		<?php foreach ($request as $key => $value): ?>
-			<input type="hidden" name="<?php echo $key; ?>" value="<?php echo htmlspecialchars($value); ?>" />
-		<?php endforeach ?>
-		<p><input type="submit" value="Continue" /></p>
-	</form>
-</body></html>
-	<?php
-		exit();
+		Merchant::redirect_post($post_url, $data);
 	}
 
 	public function _process_return()

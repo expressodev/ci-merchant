@@ -89,19 +89,7 @@ class Merchant_2checkout extends CI_Driver {
 			$data['demo'] = 'Y';
 		}
 
-		?>
-<html><head><title>Redirecting...</title></head>
-<body onload="document.payment.submit();">
-	<p>Please wait while we redirect you to the 2Checkout website...</p>
-	<form name="payment" action="<?php echo self::PROCESS_URL; ?>" method="post">
-		<?php foreach ($data as $key => $value): ?>
-			<input type="hidden" name="<?php echo $key; ?>" value="<?php echo htmlspecialchars($value); ?>" />
-		<?php endforeach ?>
-		<p><input type="submit" value="Continue" /></p>
-	</form>
-</body></html>
-	<?php
-		exit();
+		Merchant::redirect_post(self::PROCESS_URL, $data);
 	}
 
 	public function _process_return()
