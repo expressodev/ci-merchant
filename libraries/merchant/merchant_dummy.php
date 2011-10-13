@@ -43,11 +43,12 @@ class Merchant_dummy extends CI_Driver {
 	public function _process($params)
 	{
 		$date = getdate();
-		if (($params['exp_year'] % 100) >= ($date['year'] % 100) AND
-			$params['exp_month'] > $date['mon'] AND
-			$params['card_no'] == self::DUMMY_CARD)
+		if ($params['card_no'] == self::DUMMY_CARD AND (
+				$params['exp_year'] > $date['year'] OR
+				($params['exp_year'] == $date['year'] AND $params['exp_month'] >= $date['mon'])
+			))
 		{
-			return new Merchant_response('authorized', 'The transaction was authorized');
+			return new Merchant_response('authorized', 'The transaction was authorized', null, $params['amount']);
 		}
 		else
 		{
