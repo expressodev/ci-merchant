@@ -36,7 +36,7 @@ class Merchant_stripe extends CI_Driver {
 
 	public $name = 'Stripe';
 
-	public $required_fields = array('amount', 'currency', 'token', 'reference');
+	public $required_fields = array('amount', 'token', 'reference');
 
 	public $settings = array(
 		'live_api_key' => '',
@@ -57,12 +57,14 @@ class Merchant_stripe extends CI_Driver {
         Stripe::setApiKey($apiKey);
         
 		// send the data to Stripe
-		Stripe_Charge::create(array(
+		$response = Stripe_Charge::create(array(
             "amount" => $params['amount'],
-            "currency" => $params['currency'],
+            "currency" => 'usd',
             "card" => $params['token'], // obtained with stripe.js
             "description" => $params['reference'])
         );
+        
+        var_dump($response); die();
 	}
 }
 /* End of file ./libraries/merchant/drivers/merchant_stripe.php */
