@@ -54,6 +54,7 @@ class Merchant extends CI_Driver_Library {
 		'Merchant_eway',
 		'Merchant_eway_shared',
 		'Merchant_sagepay_direct',
+		'Merchant_stripe'
 	);
 
 	public function __construct($driver = NULL)
