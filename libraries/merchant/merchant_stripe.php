@@ -56,15 +56,31 @@ class Merchant_stripe extends CI_Driver {
         $apiKey = $this->settings['test_mode'] ? $this->settings['test_api_key'] : $this->settings['live_api_key'];
         Stripe::setApiKey($apiKey);
         
-		// send the data to Stripe
-		$response = Stripe_Charge::create(array(
-            "amount" => $params['amount'],
-            "currency" => 'usd',
-            "card" => $params['token'], // obtained with stripe.js
-            "description" => $params['reference'])
-        );
-        
-        var_dump($response); die();
+        try
+        {
+    		// send the data to Stripe
+    		$response = Stripe_Charge::create(array(
+                "amount" => 1.99, // Stripe needs the amount in cents rather than dollars
+                "currency" => 'usd', // Stripe only supports USD for now - this will eventually need to change
+                "card" => $params['token'], // Obtained with stripe.js
+                "description" => $params['reference'])
+            );
+
+            // Handle the response
+            if ($response->paid)
+            {
+                return new Merchant_response('authorized', '', $response->id, (double)($response->amount / 100));
+            }
+            else
+            {
+                return new Merchant_response('failed', 'invalid_response');
+            }
+        }
+        catch (Exception $exception)
+        {
+            // The payment failed
+            return new Merchant_response('failed', $exception->getMessage());
+        }
 	}
 }
 /* End of file ./libraries/merchant/drivers/merchant_stripe.php */
