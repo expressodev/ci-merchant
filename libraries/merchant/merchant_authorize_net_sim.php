@@ -45,8 +45,11 @@ class Merchant_authorize_net_sim extends CI_Driver {
 	const PROCESS_URL = 'https://secure.authorize.net/gateway/transact.dll';
 	const PROCESS_URL_TEST = 'https://test.authorize.net/gateway/transact.dll';
 
+	public $CI;
+
 	public function __construct()
 	{
+		$this->CI =& get_instance();
 		require_once MERCHANT_VENDOR_PATH.'/AuthorizeNet/AuthorizeNet.php';
 	}
 
@@ -69,13 +72,15 @@ class Merchant_authorize_net_sim extends CI_Driver {
 			'x_fp_sequence' => $fp_sequence,
 			'x_fp_hash' => $fingerprint,
 			'x_fp_timestamp' => $time,
+			'x_invoice_num' => $params['reference'],
 			'x_relay_response' => 'TRUE',
 			'x_relay_url' => $params['return_url'],
 			'x_login' => $this->settings['api_login_id'],
 			'x_show_form' => 'PAYMENT_FORM',
+			'x_customer_ip' => $this->CI->input->ip_address(),
 		);
 
-		// set extra SIM billing details if we have them
+		// set extra billing details if we have them
 		if (isset($params['card_name']))
 		{
 			$names = explode(' ', $params['card_name'], 2);
@@ -89,6 +94,7 @@ class Merchant_authorize_net_sim extends CI_Driver {
 		}
 
 		foreach (array(
+			'x_company' => 'company',
 			'x_address' => 'address',
 			'x_city' => 'city',
 			'x_state' => 'region',
