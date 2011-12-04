@@ -42,8 +42,11 @@ class Merchant_authorize_net extends CI_Driver {
 
 	public $required_fields = array('amount','card_no','exp_month','exp_year','csc','reference');
 
+	public $CI;
+
 	public function __construct()
 	{
+		$this->CI =& get_instance();
 		require_once MERCHANT_VENDOR_PATH.'/AuthorizeNet/AuthorizeNet.php';
 	}
 
@@ -55,7 +58,37 @@ class Merchant_authorize_net extends CI_Driver {
 		$transaction->exp_date = $params['exp_month'].$params['exp_year'];
 		$transaction->card_code = $params['csc'];
 		$transaction->invoice_num = $params['reference'];
+		$transaction->customer_ip = $this->CI->input->ip_address();
 		$transaction->setSandbox((bool)$this->settings['test_mode']);
+
+		// set extra billing details if we have them
+		if (isset($params['card_name']))
+		{
+			$names = explode(' ', $params['card_name'], 2);
+			$transaction->first_name = $names[0];
+			$transaction->last_name = isset($names[1]) ? $names[1] : '';
+		}
+
+		if (isset($params['address']) AND isset($params['address2']))
+		{
+			$params['address'] = trim($params['address']." \n".$params['address2']);
+		}
+
+		foreach (array(
+			'company' => 'company',
+			'address' => 'address',
+			'city' => 'city',
+			'state' => 'region',
+			'zip' => 'postcode',
+			'country' => 'country',
+			'phone' => 'phone',
+			'email' => 'email') as $key => $field)
+		{
+			if (isset($params[$field]))
+			{
+				$transaction->$key = $params[$field];
+			}
+		}
 
 		$response = $transaction->authorizeAndCapture();
 
