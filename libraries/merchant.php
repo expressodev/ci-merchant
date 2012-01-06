@@ -54,6 +54,7 @@ class Merchant extends CI_Driver_Library {
 		'Merchant_eway',
 		'Merchant_eway_shared',
 		'Merchant_sagepay_direct',
+		'Merchant_stripe',
 	);
 
 	public function __construct($driver = NULL)
@@ -154,7 +155,7 @@ class Merchant extends CI_Driver_Library {
 	 *
 	 * Let's keep our cURLs consistent
 	 */
-	public static function curl_helper($url, $post_data = NULL)
+	public static function curl_helper($url, $post_data = NULL, $username = NULL, $password = NULL)
 	{
 		$ch = curl_init($url);
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
@@ -170,6 +171,11 @@ class Merchant extends CI_Driver_Library {
 
 			curl_setopt($ch, CURLOPT_POST, TRUE);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+		}
+
+		if ($username !== NULL)
+		{
+			curl_setopt($ch, CURLOPT_USERPWD, (string)($username.':'.$password));
 		}
 
 		$response = array();
