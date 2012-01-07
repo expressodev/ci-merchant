@@ -30,10 +30,8 @@
  * Payment processing using 2Checkout
  */
 
-class Merchant_2checkout extends CI_Driver {
-
-	public $name = '2Checkout';
-
+class Merchant_2checkout extends Merchant_driver
+{
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
 	public $settings = array(

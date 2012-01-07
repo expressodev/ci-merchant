@@ -30,10 +30,8 @@
  * Payment processing using Authorize.net AIM
  */
 
-class Merchant_authorize_net extends CI_Driver {
-
-	public $name = 'Authorize.Net AIM';
-
+class Merchant_authorize_net extends Merchant_driver
+{
 	public $settings = array(
 		'api_login_id' => '',
 		'transaction_key' => '',

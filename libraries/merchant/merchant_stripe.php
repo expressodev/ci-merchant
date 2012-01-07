@@ -30,11 +30,9 @@
  * Payment processing using Stripe (https://stripe.com/)
  */
 
-class Merchant_stripe extends CI_Driver {
-
+class Merchant_stripe extends Merchant_driver
+{
 	const API_ENDPOINT = 'https://api.stripe.com';
-
-	public $name = 'Stripe';
 
 	public $required_fields = array('amount', 'currency_code', 'reference');
 
@@ -104,4 +102,4 @@ class Merchant_stripe extends CI_Driver {
 	}
 }
 
-/* End of file ./libraries/merchant/drivers/merchant_dps_pxpost.php */
+/* End of file ./libraries/merchant/drivers/merchant_stripe.php */

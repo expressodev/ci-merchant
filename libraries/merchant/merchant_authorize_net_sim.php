@@ -30,10 +30,8 @@
  * Payment processing using Authorize.net SIM (hosted)
  */
 
-class Merchant_authorize_net_sim extends CI_Driver {
-
-	public $name = 'Authorize.Net SIM';
-
+class Merchant_authorize_net_sim extends Merchant_driver
+{
 	public $settings = array(
 		'api_login_id' => '',
 		'transaction_key' => '',

@@ -30,11 +30,9 @@
  * Handles sample payment processing (authorizes when using the test credit card number only)
  */
 
-class Merchant_dummy extends CI_Driver {
-
+class Merchant_dummy extends Merchant_driver
+{
 	const DUMMY_CARD = '4111111111111111';
-
-	public $name = 'Dummy';
 
 	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
 

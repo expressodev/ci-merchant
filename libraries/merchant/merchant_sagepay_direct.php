@@ -30,10 +30,8 @@
  * Payment processing using SagePay Direct
  */
 
-class Merchant_sagepay_direct extends CI_Driver {
-
-	public $name = 'SagePay Direct';
-
+class Merchant_sagepay_direct extends Merchant_driver
+{
 	const PROCESS_URL = 'https://live.sagepay.com/gateway/service/vspdirect-register.vsp';
 	const PROCESS_URL_TEST = 'https://test.sagepay.com/gateway/service/vspdirect-register.vsp';
 

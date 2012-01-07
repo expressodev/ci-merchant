@@ -30,10 +30,8 @@
  * Payment processing using Paypal Payments Pro
  */
 
-class Merchant_paypal_pro extends CI_Driver {
-
-	public $name = 'PayPal Pro';
-
+class Merchant_paypal_pro extends Merchant_driver
+{
 	public $required_fields = array('reference', 'currency_code', 'amount',
 		'card_no', 'card_name', 'exp_month', 'exp_year', 'csc');
 

@@ -24,11 +24,6 @@
  * THE SOFTWARE.
  */
 
-if ( ! class_exists('CI_Driver_Library'))
-{
-	get_instance()->load->library('driver');
-}
-
 define('MERCHANT_VENDOR_PATH', realpath(dirname(__FILE__).'/../vendor'));
 define('MERCHANT_DRIVER_PATH', realpath(dirname(__FILE__).'/merchant'));
 
@@ -37,39 +32,32 @@ define('MERCHANT_DRIVER_PATH', realpath(dirname(__FILE__).'/merchant'));
  *
  * Payment processing for CodeIgniter
  */
-
-class Merchant extends CI_Driver_Library {
-
-	protected $_adapter;
-
-	public $valid_drivers = array(
-		'Merchant_2checkout',
-		'Merchant_authorize_net',
-		'Merchant_authorize_net_sim',
-		'Merchant_dps_pxpay',
-		'Merchant_dps_pxpost',
-		'Merchant_dummy',
-		'Merchant_paypal',
-		'Merchant_paypal_pro',
-		'Merchant_eway',
-		'Merchant_eway_shared',
-		'Merchant_sagepay_direct',
-		'Merchant_stripe',
-	);
+class Merchant
+{
+	protected $_driver;
 
 	public function __construct($driver = NULL)
 	{
-		$this->load($driver);
+		if ( ! empty($driver))
+		{
+			$this->load($driver);
+		}
 	}
 
-	/**
-	 * Check for drivers in our subfolder
-	 */
-	public function __get($child)
+	public function __call($function, $arguments)
 	{
-		$driver_file = MERCHANT_DRIVER_PATH.'/merchant_'.strtolower($child).'.php';
-		if (file_exists($driver_file)) include_once $driver_file;
-		return parent::__get($child);
+		if ( ! empty($this->_driver))
+		{
+			return call_user_func_array(array($this->_driver, $function), $arguments);
+		}
+	}
+
+	public function __get($property)
+	{
+		if ( ! empty($this->_driver))
+		{
+			return $this->_driver->$property;
+		}
 	}
 
 	/**
@@ -77,38 +65,63 @@ class Merchant extends CI_Driver_Library {
 	 */
 	public function load($driver)
 	{
-		if ( ! in_array('Merchant_'.$driver, $this->valid_drivers)) return FALSE;
-
-		$this->_adapter = $driver;
-		return TRUE;
+		$this->_driver = $this->_create_instance($driver);
+		return $this->_driver !== FALSE;
 	}
 
 	/**
-	 * The name of the currently loaded driver
+	 * Load and create a new instance of a driver.
 	 */
-	public function name()
+	protected function _create_instance($driver)
 	{
-		if (isset($this->{$this->_adapter}->name))
+		$driver_class = 'Merchant_'.strtolower($driver);
+		if (class_exists($driver_class)) return new $driver_class;
+
+		$driver_path = MERCHANT_DRIVER_PATH.'/'.strtolower($driver_class).'.php';
+		if (file_exists($driver_path))
 		{
-			return $this->{$this->_adapter}->name;
+			require_once($driver_path);
+			if (class_exists($driver_class)) return new $driver_class;
 		}
-		else
-		{
-			return FALSE;
-		}
+
+		return FALSE;
 	}
 
 	public function initialize($settings)
 	{
+		if ( ! is_array($settings)) return;
+
 		foreach ($settings as $key => $value)
 		{
-			if (isset($this->{$this->_adapter}->settings[$key]))
+			if (isset($this->_driver->settings[$key]))
 			{
-				if (is_bool($this->{$this->_adapter}->settings[$key])) $value = (bool)$value;
+				if (is_bool($this->_driver->settings[$key])) $value = (bool)$value;
 
-				$this->{$this->_adapter}->settings[$key] = $value;
+				$this->_driver->settings[$key] = $value;
 			}
 		}
+	}
+
+	public function get_valid_drivers()
+	{
+		$valid_drivers = array();
+
+		foreach (scandir(MERCHANT_DRIVER_PATH) as $file_name)
+		{
+			$driver_path = MERCHANT_DRIVER_PATH.'/'.$file_name;
+			if (stripos($file_name, 'merchant_') === 0 AND is_file($driver_path))
+			{
+				require_once($driver_path);
+
+				$driver_class = ucfirst(str_replace('.php', '', $file_name));
+				if (class_exists($driver_class))
+				{
+					$valid_drivers[] = str_replace('Merchant_', '', $driver_class);
+				}
+			}
+		}
+
+		return $valid_drivers;
 	}
 
 	public function process($params = array())
@@ -118,9 +131,9 @@ class Merchant extends CI_Driver_Library {
 			show_error('Card details were not submitted over a secure connection.');
 		}
 
-		if (is_array($this->{$this->_adapter}->required_fields))
+		if (is_array($this->_driver->required_fields))
 		{
-			foreach ($this->{$this->_adapter}->required_fields as $field_name)
+			foreach ($this->_driver->required_fields as $field_name)
 			{
 				if (empty($params[$field_name]))
 				{
@@ -140,14 +153,17 @@ class Merchant extends CI_Driver_Library {
 		// normalize card_type to lowercase
 		if (isset($params['card_type'])) $params['card_type'] = strtolower($params['card_type']);
 
-		return $this->{$this->_adapter}->_process($params);
+		return $this->_driver->_process($params);
 	}
 
 	public function process_return()
 	{
-		$adapter = $this->{$this->_adapter};
-		if (method_exists($adapter, '_process_return'))	return $adapter->_process_return();
-		else return new Merchant_response('failed', 'return_not_supported');
+		if (method_exists($this->_driver, '_process_return'))
+		{
+			return $this->_driver->_process_return();
+		}
+
+		return new Merchant_response('failed', 'return_not_supported');
 	}
 
 	/**
@@ -216,6 +232,14 @@ class Merchant extends CI_Driver_Library {
 	<?php
 		exit();
 	}
+}
+
+abstract class Merchant_driver
+{
+	public $settings;
+	public $required_fields;
+
+	public abstract function _process($params);
 }
 
 class Merchant_response

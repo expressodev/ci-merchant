@@ -30,10 +30,8 @@
  * Payment processing using eWAY
  */
 
-class Merchant_eway extends CI_Driver {
-
-	public $name = 'eWAY Hosted';
-
+class Merchant_eway extends Merchant_driver
+{
 	const PROCESS_URL = 'https://www.eway.com.au/gateway_cvn/xmlpayment.asp';
 	const PROCESS_URL_TEST =  'https://www.eway.com.au/gateway_cvn/xmltest/testpage.asp';
 

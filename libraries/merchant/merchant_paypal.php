@@ -30,10 +30,8 @@
  * Payment processing using Paypal Payments Standard
  */
 
-class Merchant_paypal extends CI_Driver {
-
-	public $name = 'PayPal';
-
+class Merchant_paypal extends Merchant_driver
+{
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url', 'cancel_url', 'notify_url');
 
 	public $settings = array(
