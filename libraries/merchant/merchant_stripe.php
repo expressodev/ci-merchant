@@ -46,6 +46,7 @@ class Merchant_stripe extends Merchant_driver
 			'amount' => (int)($params['amount'] * 100),
 			'card' => $params['token'],
 			'currency' => strtolower($params['currency_code']),
+			'description' => $params['reference'],
 		);
 
 		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->settings['api_key']);
