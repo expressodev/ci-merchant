@@ -1,0 +1,3 @@
+[submodule "vendor/Stripe"]
+	path = vendor/Stripe
+	url = git://github.com/stripe/stripe-php.git
