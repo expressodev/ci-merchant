@@ -34,7 +34,7 @@ class Merchant_stripe extends Merchant_driver
 {
 	const API_ENDPOINT = 'https://api.stripe.com';
 
-	public $required_fields = array('amount', 'currency_code', 'reference');
+	public $required_fields = array('amount', 'token', 'currency_code', 'reference');
 
 	public $settings = array(
 		'api_key' => '',
@@ -42,50 +42,11 @@ class Merchant_stripe extends Merchant_driver
 
 	public function _process($params)
 	{
-		// if card token is not supplied, card details are required
-		if (empty($params['token']))
-		{
-			foreach (array('card_no', 'card_name', 'exp_month', 'exp_year', 'csc') as $field_name)
-			{
-				if (empty($params[$field_name]))
-				{
-					$response = new Merchant_response('failed', 'field_missing');
-					$response->error_field = $field_name;
-					return $response;
-				}
-			}
-		}
-
 		$request = array(
 			'amount' => (int)($params['amount'] * 100),
+			'card' => $params['token'],
 			'currency' => strtolower($params['currency_code']),
 		);
-
-		if (empty($params['token']))
-		{
-			$request['card'] = array(
-				'number' => $params['card_no'],
-				'name' => $params['card_name'],
-				'exp_month' => $params['exp_month'],
-				'exp_year' => $params['exp_year'],
-				'cvc' => $params['csc'],
-			);
-
-			if (isset($params['address']) AND isset($params['address2']))
-			{
-				$params['address'] .= ', '.$params['address2'];
-			}
-
-			if (isset($params['address'])) $request['card']['address_line1'] = $params['address'];
-			if (isset($params['city'])) $request['card']['address_line2'] = $params['city'];
-			if (isset($params['region'])) $request['card']['address_state'] = $params['region'];
-			if (isset($params['country'])) $request['card']['address_country'] = $params['country'];
-			if (isset($params['postcode'])) $request['card']['address_zip'] = $params['postcode'];
-		}
-		else
-		{
-			$request['card'] = $params['token'];
-		}
 
 		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->settings['api_key']);
 		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
