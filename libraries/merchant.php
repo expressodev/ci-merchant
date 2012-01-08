@@ -70,6 +70,16 @@ class Merchant
 	}
 
 	/**
+	 * Returns the name of the currently loaded driver
+	 */
+	public function active_driver()
+	{
+		$class_name = get_class($this->_driver);
+		if ($class_name === FALSE) return FALSE;
+		return str_replace('Merchant_', '', $class_name);
+	}
+
+	/**
 	 * Load and create a new instance of a driver.
 	 */
 	protected function _create_instance($driver)
@@ -191,7 +201,7 @@ class Merchant
 
 		if ($username !== NULL)
 		{
-			curl_setopt($ch, CURLOPT_USERPWD, (string)($username.':'.$password));
+			curl_setopt($ch, CURLOPT_USERPWD, $username.':'.$password);
 		}
 
 		$response = array();
