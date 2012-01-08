@@ -60,7 +60,7 @@ class Merchant_stripe extends CI_Driver {
         {
     		// send the data to Stripe
     		$response = Stripe_Charge::create(array(
-                "amount" => 1.99, // Stripe needs the amount in cents rather than dollars
+                "amount" => $params['amount'], // Stripe needs the amount in cents rather than dollars
                 "currency" => 'usd', // Stripe only supports USD for now - this will eventually need to change
                 "card" => $params['token'], // Obtained with stripe.js
                 "description" => $params['reference'])
