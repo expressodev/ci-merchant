@@ -24,6 +24,11 @@
  * THE SOFTWARE.
  */
 
+// Support legacy drivers which extend the CI_Driver class
+// All drivers should be updated to extend Merchant_driver instead
+// This will be removed in a future version!
+if ( ! class_exists('CI_Driver')) get_instance()->load->library('driver');
+
 define('MERCHANT_VENDOR_PATH', realpath(dirname(__FILE__).'/../vendor'));
 define('MERCHANT_DRIVER_PATH', realpath(dirname(__FILE__).'/merchant'));
 
