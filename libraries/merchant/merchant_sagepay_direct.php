@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,8 @@
  * Payment processing using SagePay Direct
  */
 
-class Merchant_sagepay_direct extends CI_Driver {
-
-	public $name = 'SagePay Direct';
-
+class Merchant_sagepay_direct extends Merchant_driver
+{
 	const PROCESS_URL = 'https://live.sagepay.com/gateway/service/vspdirect-register.vsp';
 	const PROCESS_URL_TEST = 'https://test.sagepay.com/gateway/service/vspdirect-register.vsp';
 

@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,11 +30,9 @@
  * Payment processing using DPS PaymentExpress PxPost
  */
 
-class Merchant_dps_pxpost extends CI_Driver {
-
+class Merchant_dps_pxpost extends Merchant_driver
+{
 	const PROCESS_URL = 'https://sec.paymentexpress.com/pxpost.aspx';
-
-	public $name = 'DPS PaymentExpress PxPost';
 
 	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
 

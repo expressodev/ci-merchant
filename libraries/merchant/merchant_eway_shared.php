@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,12 +30,10 @@
  * Payment processing using eWAY's Secure Hosted Page
  */
 
-class Merchant_eway_shared extends CI_Driver {
-
+class Merchant_eway_shared extends Merchant_driver
+{
 	const PROCESS_URL = 'https://au.ewaygateway.com/Request/';
 	const PROCESS_RETURN_URL = 'https://au.ewaygateway.com/Result/';
-
-	public $name = 'eWAY Shared';
 
 	public $required_fields = array('amount', 'currency_code', 'transaction_id', 'reference', 'return_url', 'cancel_url');
 

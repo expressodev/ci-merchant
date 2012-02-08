@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,8 @@
  * Payment processing using 2Checkout
  */
 
-class Merchant_2checkout extends CI_Driver {
-
-	public $name = '2Checkout';
-
+class Merchant_2checkout extends Merchant_driver
+{
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
 	public $settings = array(

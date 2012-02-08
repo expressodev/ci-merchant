@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2012 Crescendo Multimedia Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,34 +25,43 @@
  */
 
 /**
- * Merchant Dummy Class
+ * Merchant Stripe Class
  *
- * Handles sample payment processing (authorizes when using the test credit card number only)
+ * Payment processing using Stripe (https://stripe.com/)
  */
 
-class Merchant_dummy extends Merchant_driver
+class Merchant_stripe extends Merchant_driver
 {
-	const DUMMY_CARD = '4111111111111111';
+	const API_ENDPOINT = 'https://api.stripe.com';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
+	public $required_fields = array('amount', 'token', 'currency_code', 'reference');
 
-	public $settings = array();
+	public $settings = array(
+		'api_key' => '',
+	);
 
 	public function _process($params)
 	{
-		$date = getdate();
-		if ($params['card_no'] == self::DUMMY_CARD AND (
-				$params['exp_year'] > $date['year'] OR
-				($params['exp_year'] == $date['year'] AND $params['exp_month'] >= $date['mon'])
-			))
+		$request = array(
+			'amount' => (int)($params['amount'] * 100),
+			'card' => $params['token'],
+			'currency' => strtolower($params['currency_code']),
+			'description' => $params['reference'],
+		);
+
+		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->settings['api_key']);
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+
+		$data = json_decode($response['data']);
+		if (isset($data->error))
 		{
-			return new Merchant_response('authorized', 'The transaction was authorized', null, $params['amount']);
+			return new Merchant_response('declined', $data->error->message);
 		}
 		else
 		{
-			return new Merchant_response('declined', 'The transaction was declined');
+			return new Merchant_response('authorized', '', $data->id, $data->amount / 100);
 		}
 	}
 }
 
-/* End of file ./libraries/merchant/drivers/merchant_dummy.php */
+/* End of file ./libraries/merchant/drivers/merchant_stripe.php */

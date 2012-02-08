@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,8 @@
  * Payment processing using Authorize.net SIM (hosted)
  */
 
-class Merchant_authorize_net_sim extends CI_Driver {
-
-	public $name = 'Authorize.Net SIM';
-
+class Merchant_authorize_net_sim extends Merchant_driver
+{
 	public $settings = array(
 		'api_login_id' => '',
 		'transaction_key' => '',
