@@ -38,8 +38,9 @@ class Merchant_worldpay extends Merchant_driver
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
 	public $settings = array(
-		'username' => '',
+		'installation_id' => '',
 		'secret' => '',
+		'payment_response_password' => '',
 		'test_mode' => FALSE
 	);
 
@@ -53,11 +54,11 @@ class Merchant_worldpay extends Merchant_driver
 	public function _process($params)
 	{
 		$data = array(
-			'instId' => $this->settings['username'],
+			'instId' => $this->settings['installation_id'],
 			'cartId' => $params['reference'],
 			'amount' => $params['amount'],
 			'currency' => $params['currency_code'],
-			'testMode' => (int)$this->settings['test_mode'],
+			'testMode' => $this->settings['test_mode'] ? 100 : 0,
 			'MC_callback' => $params['return_url'],
 		);
 
@@ -69,13 +70,13 @@ class Merchant_worldpay extends Merchant_driver
 		if ( ! empty($params['postcode'])) $data['postcode'] = $params['postcode'];
 		if ( ! empty($params['country'])) $data['country'] = $params['country'];
 		if ( ! empty($params['phone'])) $data['tel'] = $params['phone'];
-		if ( ! empty($params['email'])) $data['name'] = $params['email'];
+		if ( ! empty($params['email'])) $data['email'] = $params['email'];
 
 		if ( ! empty($this->settings['secret']))
 		{
-			$data['signatureFields'] = 'instId:amount:currency:cardId';
-			$signature_data = array($this->settings['secret'], $params['instId'],
-				$params['amount'], $params['currency'], $params['cartId']);
+			$data['signatureFields'] = 'instId:amount:currency:cartId';
+			$signature_data = array($this->settings['secret'],
+				$data['instId'], $data['amount'], $data['currency'], $data['cartId']);
 			$data['signature'] = md5(implode(':', $signature_data));
 		}
 
@@ -85,17 +86,20 @@ class Merchant_worldpay extends Merchant_driver
 
 	public function _process_return()
 	{
+		$callback_pw = (string)$this->CI->input->post('callbackPW');
+		if ($callback_pw != $this->settings['payment_response_password'])
+		{
+			return new Merchant_response('failed', 'invalid_response');
+		}
+
 		$status = $this->CI->input->post('transStatus');
-		$message = $this->CI->input->post('rawAuthMessage');
-
-		// TODO: validate response
-
 		if (empty($status))
 		{
 			return new Merchant_response('failed', 'invalid_response');
 		}
 		elseif ($status != 'Y')
 		{
+			$message = $this->CI->input->post('rawAuthMessage');
 			return new Merchant_response('declined', $message);
 		}
 		else
