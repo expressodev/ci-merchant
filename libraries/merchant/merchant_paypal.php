@@ -32,7 +32,7 @@
 
 class Merchant_paypal extends Merchant_driver
 {
-	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url', 'cancel_url', 'notify_url');
+	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
 	public $settings = array(
 		'paypal_email' => '',
@@ -44,12 +44,8 @@ class Merchant_paypal extends Merchant_driver
 
 	public $CI;
 
-	public function __construct($settings = array())
+	public function __construct()
 	{
-		foreach ($settings as $key => $value)
-		{
-			if(array_key_exists($key, $this->settings))	$this->settings[$key] = $value;
-		}
 		$this->CI =& get_instance();
 	}
 
@@ -57,16 +53,17 @@ class Merchant_paypal extends Merchant_driver
 	{
 		// ask paypal to generate request url
 		$data = array(
-			'rm' => '2',
 			'cmd' => '_xclick',
+			'paymentaction' => 'sale',
 			'business' => $this->settings['paypal_email'],
-			'return'=> $params['return_url'],
-      		'cancel_return' => $params['cancel_url'],
-      		'notify_url' => $params['notify_url'],
-      		'item_name' => $params['reference'],
-      		'amount' => sprintf('%01.2f', $params['amount']),
+			'amount' => sprintf('%01.2f', $params['amount']),
 			'currency_code' => $params['currency_code'],
-			'no_shipping' => 1
+			'item_name' => $params['reference'],
+			'return'=> $params['return_url'],
+			'cancel_return' => $params['return_url'],
+			'notify_url' => $params['return_url'],
+			'rm' => '2',
+			'no_shipping' => 1,
 		);
 
 		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
@@ -75,34 +72,31 @@ class Merchant_paypal extends Merchant_driver
 
 	public function _process_return()
 	{
-		$action = $this->CI->input->get('action', TRUE);
-
-		if ($action === FALSE) return new Merchant_response('failed', 'invalid_response');
-
-		if ($action === 'success') return new Merchant_response('return', '', $_POST['txn_id']);
-
-		if ($action === 'cancel') return new Merchant_response('failed', 'payment_cancelled');
-
-		if ($action === 'ipn')
+		$txn_id = $this->CI->input->post('txn_id');
+		if (empty($txn_id))
 		{
-			// generate the post string from _POST
-			$post_string = 'cmd=_notify-validate&'.http_build_query($_POST);
-
-			$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $post_string);
-			if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
-
-			$memo = $this->CI->input->post('memo');
-			if (strpos("VERIFIED", $response['data']) !== FALSE)
-			{
-				// Valid IPN transaction.
-				return new Merchant_response('authorized', $memo, $_POST['txn_id'], (string)$_POST['mc_gross']);
-      		}
-			else
-			{
-				// Invalid IPN transaction
-				return new Merchant_response('declined', $memo);
-			}
+			return new Merchant_response('failed', 'payment_cancelled');
 		}
+
+		// verify response
+		$post_string = 'cmd=_notify-validate&'.http_build_query($_POST);
+		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $post_string);
+		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+
+		if ($response['data'] != 'VERIFIED')
+		{
+			return new Merchant_response('failed', 'invalid_response');
+		}
+
+		$payment_status = $this->CI->input->post('payment_status');
+		if ($payment_status == 'Completed')
+		{
+			$amount = (float)$this->CI->input->post('mc_gross');
+			return new Merchant_response('authorized', NULL, $txn_id, $amount);
+		}
+
+		return new Merchant_response('declined', $payment_status);
 	}
 }
+
 /* End of file ./libraries/merchant/drivers/merchant_paypal.php */
