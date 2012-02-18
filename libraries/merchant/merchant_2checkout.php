@@ -44,12 +44,8 @@ class Merchant_2checkout extends Merchant_driver
 
 	public $CI;
 
-	public function __construct($settings = array())
+	public function __construct()
 	{
-		foreach ($settings as $key => $value)
-		{
-			if(array_key_exists($key, $this->settings))	$this->settings[$key] = $value;
-		}
 		$this->CI =& get_instance();
 	}
 

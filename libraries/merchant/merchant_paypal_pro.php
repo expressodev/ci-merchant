@@ -47,14 +47,9 @@ class Merchant_paypal_pro extends Merchant_driver
 
 	public $CI;
 
-	public function __construct($settings = array())
+	public function __construct()
 	{
 		$this->CI =& get_instance();
-
-		foreach ($settings as $key => $value)
-		{
-			if (array_key_exists($key, $this->settings)) $this->settings[$key] = $value;
-		}
 	}
 
 	public function _process($params)
