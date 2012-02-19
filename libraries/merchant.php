@@ -222,14 +222,14 @@ class Merchant
 	 *
 	 * Automatically redirect the user to payment pages which require POST data
 	 */
-	public static function redirect_post($post_url, $data)
+	public static function redirect_post($post_url, $data, $message = 'Please wait while we redirect you to the payment page...')
 	{
 		?>
 <!DOCTYPE html>
 <html>
 <head><title>Redirecting...</title></head>
-<body onload="document.payment.submit();">
-	<p>Please wait while we redirect you to the payment page...</p>
+<body onload="document.forms[0].submit();">
+	<p><?php echo htmlspecialchars($message); ?></p>
 	<form name="payment" action="<?php echo htmlspecialchars($post_url); ?>" method="post">
 		<p>
 			<?php if (is_array($data)): ?>
