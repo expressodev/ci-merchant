@@ -60,7 +60,7 @@ class Merchant_paypal extends Merchant_driver
 			'currency_code' => $params['currency_code'],
 			'item_name' => $params['reference'],
 			'return'=> $params['return_url'],
-			'cancel_return' => $params['return_url'],
+			'cancel_return' => $params['cancel_url'],
 			'notify_url' => $params['return_url'],
 			'rm' => '2',
 			'no_shipping' => 1,
@@ -76,6 +76,12 @@ class Merchant_paypal extends Merchant_driver
 		if (empty($txn_id))
 		{
 			return new Merchant_response('failed', 'payment_cancelled');
+		}
+
+		// verify payee
+		if ($this->CI->input->post('receiver_email') != $this->settings['paypal_email'])
+		{
+			return new Merchant_response('failed', 'invalid_response');
 		}
 
 		// verify response
