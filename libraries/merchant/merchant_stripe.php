@@ -43,7 +43,7 @@ class Merchant_stripe extends Merchant_driver
 	public function process($params)
 	{
 		$request = array(
-			'amount' => (int)($params['amount'] * 100),
+			'amount' => round($params['amount'] * 100),
 			'card' => $params['token'],
 			'currency' => strtolower($params['currency_code']),
 			'description' => $params['reference'],
