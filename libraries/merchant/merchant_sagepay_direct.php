@@ -39,7 +39,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 	const PROCESS_URL_SIM = 'https://test.sagepay.com/Simulator/VSPDirectGateway.asp';
 
 	public $required_fields = array('amount', 'card_no', 'card_name', 'card_type',
-		'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
+		'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
 
 	public $settings = array(
 		'vendor' => '',
@@ -52,7 +52,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 			'VPSProtocol' => '2.23',
 			'TxType' => 'PAYMENT',
 			'Vendor' => $this->settings['vendor'],
-			'VendorTxCode' => $params['transaction_id'],
+			'VendorTxCode' => $params['reference'],
 			'Description' => $params['reference'],
 			'Amount' => sprintf('%01.2f', $params['amount']),
 			'Currency' => $params['currency_code'],

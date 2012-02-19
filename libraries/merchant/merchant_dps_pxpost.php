@@ -34,7 +34,7 @@ class Merchant_dps_pxpost extends Merchant_driver
 {
 	const PROCESS_URL = 'https://sec.paymentexpress.com/pxpost.aspx';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
+	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
 
 	public $settings = array(
 		'username' => '',
@@ -57,7 +57,6 @@ class Merchant_dps_pxpost extends Merchant_driver
 				'<Cvc2>'.$params['csc'].'</Cvc2>'.
 				'<InputCurrency>'.$params['currency_code'].'</InputCurrency>'.
 				'<TxnType>Purchase</TxnType>'.
-				'<TxnId>'.$params['transaction_id'].'</TxnId>'.
 				'<MerchantReference>'.$params['reference'].'</MerchantReference>'.
 				'<EnableAddBillCard>'.(int)$this->settings['enable_token_billing'].'</EnableAddBillCard>'.
 			'</Txn>';

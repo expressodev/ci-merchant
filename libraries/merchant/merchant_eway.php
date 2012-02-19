@@ -35,7 +35,7 @@ class Merchant_eway extends Merchant_driver
 	const PROCESS_URL = 'https://www.eway.com.au/gateway_cvn/xmlpayment.asp';
 	const PROCESS_URL_TEST =  'https://www.eway.com.au/gateway_cvn/xmltest/testpage.asp';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
+	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
 
 	public $settings = array(
 		'customer_id' => '',
@@ -50,14 +50,14 @@ class Merchant_eway extends Merchant_driver
 		$request = '<ewaygateway>'.
 	      		'<ewayCustomerID>'.$this->settings['customer_id'].'</ewayCustomerID>'.
 	      		'<ewayTotalAmount>'.sprintf('%01d', $params['amount'] * 100).'</ewayTotalAmount>'.
-	      		'<ewayCustomerInvoiceDescription>'.$params['reference'].'</ewayCustomerInvoiceDescription>'.
-	      		'<ewayCustomerInvoiceRef>'.$params['transaction_id'].'</ewayCustomerInvoiceRef>'.
+	      		'<ewayCustomerInvoiceDescription></ewayCustomerInvoiceDescription>'.
+	      		'<ewayCustomerInvoiceRef>'.$params['reference'].'</ewayCustomerInvoiceRef>'.
 	      		'<ewayCardHoldersName>'.$params['card_name'].'</ewayCardHoldersName>'.
 	      		'<ewayCardNumber>'.$params['card_no'].'</ewayCardNumber>'.
 	      		'<ewayCardExpiryMonth>'.$params['exp_month'].'</ewayCardExpiryMonth>'.
 	      		'<ewayCardExpiryYear>'.($params['exp_year'] % 100).'</ewayCardExpiryYear>'.
-	      		'<ewayTrxnNumber>'.$params['transaction_id'].'</ewayTrxnNumber>'.
 	      		'<ewayCVN>'.$params['csc'].'</ewayCVN>'.
+	      		'<ewayTrxnNumber></ewayTrxnNumber>'.
 				'<ewayCustomerFirstName></ewayCustomerFirstName>'.
 				'<ewayCustomerLastName></ewayCustomerLastName>'.
 				'<ewayCustomerEmail></ewayCustomerEmail>'.
