@@ -63,7 +63,7 @@ class Merchant_ogone_directlink extends Merchant_driver
 			'PSWD' => $this->settings['password'],
 			'ORDERID' => $params['reference'],
 			'OPERATION' => 'SAL',
-			'AMOUNT' => (int)($params['amount'] * 100),
+			'AMOUNT' => round($params['amount'] * 100),
 			'CURRENCY' => $params['currency_code'],
 			'CARDNO' => $params['card_no'],
 			'ED' => $date_expiry,
@@ -110,4 +110,4 @@ class Merchant_ogone_directlink extends Merchant_driver
 	}
 }
 
-/* End of file ./libraries/merchant/drivers/merchant_dps_pxpost.php */
+/* End of file ./libraries/merchant/drivers/merchant_ogone_directlink.php */
