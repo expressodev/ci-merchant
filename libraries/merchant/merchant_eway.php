@@ -49,7 +49,7 @@ class Merchant_eway extends Merchant_driver
 
 		$request = '<ewaygateway>'.
 	      		'<ewayCustomerID>'.$this->settings['customer_id'].'</ewayCustomerID>'.
-	      		'<ewayTotalAmount>'.sprintf('%01d', $params['amount'] * 100).'</ewayTotalAmount>'.
+	      		'<ewayTotalAmount>'.round($params['amount'] * 100).'</ewayTotalAmount>'.
 	      		'<ewayCustomerInvoiceDescription></ewayCustomerInvoiceDescription>'.
 	      		'<ewayCustomerInvoiceRef>'.$params['reference'].'</ewayCustomerInvoiceRef>'.
 	      		'<ewayCardHoldersName>'.$params['card_name'].'</ewayCardHoldersName>'.
