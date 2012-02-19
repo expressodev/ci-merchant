@@ -48,7 +48,7 @@ class Merchant_authorize_net extends Merchant_driver
 		require_once MERCHANT_VENDOR_PATH.'/AuthorizeNet/AuthorizeNet.php';
 	}
 
-	public function _process($params)
+	public function process($params)
 	{
 		$transaction = new AuthorizeNetAIM($this->settings['api_login_id'],$this->settings['transaction_key']);
 		$transaction->amount = $params['amount'];

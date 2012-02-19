@@ -46,7 +46,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 		'test_mode' => FALSE
 	);
 
-	public function _process($params)
+	public function process($params)
 	{
 		$data = array(
 			'VPSProtocol' => '2.23',

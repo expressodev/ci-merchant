@@ -42,7 +42,7 @@ class Merchant_eway extends Merchant_driver
 		'test_mode' => FALSE
 	);
 
-	public function _process($params)
+	public function process($params)
 	{
 		// eway thows HTML formatted error if customerid is missing
 		if (empty($this->settings['customer_id'])) return new Merchant_response('failed', 'Missing Customer ID!');

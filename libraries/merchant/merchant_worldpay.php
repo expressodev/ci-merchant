@@ -51,7 +51,7 @@ class Merchant_worldpay extends Merchant_driver
 		$this->CI = get_instance();
 	}
 
-	public function _process($params)
+	public function process($params)
 	{
 		$data = array(
 			'instId' => $this->settings['installation_id'],
@@ -84,7 +84,7 @@ class Merchant_worldpay extends Merchant_driver
 		Merchant::redirect_post($post_url, $data);
 	}
 
-	public function _process_return()
+	public function process_return($params)
 	{
 		$callback_pw = (string)$this->CI->input->post('callbackPW');
 		if ($callback_pw != $this->settings['payment_response_password'])

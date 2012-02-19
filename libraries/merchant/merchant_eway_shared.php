@@ -55,7 +55,7 @@ class Merchant_eway_shared extends Merchant_driver
 		$this->CI =& get_instance();
 	}
 
-	public function _process($params)
+	public function process($params)
 	{
 		$this->CI->load->helper('url');
 
@@ -96,7 +96,7 @@ class Merchant_eway_shared extends Merchant_driver
 		}
 	}
 
-	public function _process_return()
+	public function process_return($params)
 	{
 		if (($payment_code = $this->CI->input->get_post('AccessPaymentCode')) === FALSE)
 		{

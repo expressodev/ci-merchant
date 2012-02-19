@@ -168,11 +168,23 @@ class Merchant
 		// normalize card_type to lowercase
 		if (isset($params['card_type'])) $params['card_type'] = strtolower($params['card_type']);
 
-		return $this->_driver->_process($params);
+		// DEPRECATED: old _process() function
+		if (method_exists($this->_driver, '_process'))
+		{
+			return $this->_driver->_process($params);
+		}
+
+		return $this->_driver->process($params);
 	}
 
-	public function process_return()
+	public function process_return($params = array())
 	{
+		if (method_exists($this->_driver, 'process_return'))
+		{
+			return $this->_driver->process_return($params);
+		}
+
+		// DEPRECATED: Old _process_return() function doesn't accept params array
 		if (method_exists($this->_driver, '_process_return'))
 		{
 			return $this->_driver->_process_return();
@@ -253,8 +265,6 @@ abstract class Merchant_driver
 {
 	public $settings;
 	public $required_fields;
-
-	public abstract function _process($params);
 }
 
 class Merchant_response

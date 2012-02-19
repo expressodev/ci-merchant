@@ -52,7 +52,7 @@ class Merchant_paypal_pro extends Merchant_driver
 		$this->CI =& get_instance();
 	}
 
-	public function _process($params)
+	public function process($params)
 	{
 		$card_name = explode(' ', $params['card_name'], 2);
 

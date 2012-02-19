@@ -40,7 +40,7 @@ class Merchant_stripe extends Merchant_driver
 		'api_key' => '',
 	);
 
-	public function _process($params)
+	public function process($params)
 	{
 		$request = array(
 			'amount' => (int)($params['amount'] * 100),

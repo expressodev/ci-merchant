@@ -42,7 +42,7 @@ class Merchant_dps_pxpost extends Merchant_driver
 		'enable_token_billing' => FALSE,
 	);
 
-	public function _process($params)
+	public function process($params)
 	{
 		$date_expiry = $params['exp_month'];
 		$date_expiry .= $params['exp_year'] % 100;

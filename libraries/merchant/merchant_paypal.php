@@ -49,7 +49,7 @@ class Merchant_paypal extends Merchant_driver
 		$this->CI =& get_instance();
 	}
 
-	public function _process($params)
+	public function process($params)
 	{
 		// ask paypal to generate request url
 		$data = array(
@@ -70,7 +70,7 @@ class Merchant_paypal extends Merchant_driver
 		Merchant::redirect_post($post_url, $data);
 	}
 
-	public function _process_return()
+	public function process_return($params)
 	{
 		$txn_id = $this->CI->input->post('txn_id');
 		if (empty($txn_id))

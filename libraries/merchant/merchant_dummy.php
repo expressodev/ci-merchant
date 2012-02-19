@@ -38,7 +38,7 @@ class Merchant_dummy extends Merchant_driver
 
 	public $settings = array();
 
-	public function _process($params)
+	public function process($params)
 	{
 		$date = getdate();
 		if ($params['card_no'] == self::DUMMY_CARD AND (

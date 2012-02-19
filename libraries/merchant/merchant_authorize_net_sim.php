@@ -51,7 +51,7 @@ class Merchant_authorize_net_sim extends Merchant_driver
 		require_once MERCHANT_VENDOR_PATH.'/AuthorizeNet/AuthorizeNet.php';
 	}
 
-	public function _process($params)
+	public function process($params)
 	{
 		$fp_sequence = $params['reference'];
 		$time = time();
@@ -113,7 +113,7 @@ class Merchant_authorize_net_sim extends Merchant_driver
 		Merchant::redirect_post($post_url, $sim->getHiddenFieldString());
 	}
 
-	public function _process_return()
+	public function process_return($params)
 	{
 		$response = new AuthorizeNetSIM($this->settings['api_login_id']);
 

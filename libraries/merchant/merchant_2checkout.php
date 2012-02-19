@@ -49,7 +49,7 @@ class Merchant_2checkout extends Merchant_driver
 		$this->CI =& get_instance();
 	}
 
-	public function _process($params)
+	public function process($params)
 	{
 		// post data to 2checkout
 		$data = array(
@@ -87,7 +87,7 @@ class Merchant_2checkout extends Merchant_driver
 		Merchant::redirect_post(self::PROCESS_URL, $data);
 	}
 
-	public function _process_return()
+	public function process_return($params)
 	{
 		$order_number = $this->CI->input->post('order_number');
 		$order_total = $this->CI->input->post('total');
