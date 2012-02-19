@@ -57,8 +57,9 @@ class Merchant_2checkout extends Merchant_driver
 			'cart_order_id' => $params['reference'],
 			'total' => $params['amount'],
 			'tco_currency' => $params['currency_code'],
+			'fixed' => 'Y',
 			'skip_landing' => 1,
-      		'x_Receipt_Link_URL' => $params['return_url'],
+			'x_receipt_link_url' => $params['return_url'],
 		);
 
 		foreach (array(
