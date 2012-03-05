@@ -86,20 +86,60 @@ class Merchant
 
 	/**
 	 * Load and create a new instance of a driver.
+	 * $driver can be specified either as a class name (Merchant_paypal) or a short name (paypal)
 	 */
 	protected function _create_instance($driver)
 	{
-		$driver_class = 'Merchant_'.strtolower($driver);
-		if (class_exists($driver_class)) return new $driver_class;
-
-		$driver_path = MERCHANT_DRIVER_PATH.'/'.strtolower($driver_class).'.php';
-		if (file_exists($driver_path))
+		if (stripos($driver, 'merchant_') === 0)
 		{
-			require_once($driver_path);
-			if (class_exists($driver_class)) return new $driver_class;
+			$driver_class = ucfirst(strtolower($driver));
+		}
+		else
+		{
+			$driver_class = 'Merchant_'.strtolower($driver);
 		}
 
-		return FALSE;
+		$instance = NULL;
+		if (class_exists($driver_class))
+		{
+			$instance = new $driver_class;
+		}
+		else
+		{
+			$driver_path = MERCHANT_DRIVER_PATH.'/'.strtolower($driver_class).'.php';
+			if (file_exists($driver_path))
+			{
+				require_once($driver_path);
+				if (class_exists($driver_class))
+				{
+					$instance = new $driver_class;
+				}
+			}
+		}
+
+		if (empty($instance)) return FALSE;
+
+		// backwards compatible with drivers which don't have $default_settings array
+		if (empty($instance->default_settings))
+		{
+			$instance->default_settings = $instance->settings;
+		}
+
+		// initialize default settings
+		$instance->settings = array();
+		foreach ($instance->default_settings as $key => $setting)
+		{
+			if (is_array($setting))
+			{
+				$instance->settings[$key] = isset($setting['default']) ? $setting['default'] : NULL;
+			}
+			else
+			{
+				$instance->settings[$key] = $setting;
+			}
+		}
+
+		return $instance;
 	}
 
 	public function initialize($settings)
@@ -263,6 +303,7 @@ class Merchant
 
 abstract class Merchant_driver
 {
+	public $default_settings = array();
 	public $settings;
 	public $required_fields;
 }
