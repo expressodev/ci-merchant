@@ -32,9 +32,6 @@
 
 class Merchant_paypal_pro extends Merchant_driver
 {
-	public $required_fields = array('reference', 'currency_code', 'amount',
-		'card_no', 'card_name', 'exp_month', 'exp_year', 'csc');
-
 	const PROCESS_URL = 'https://api-3t.paypal.com/nvp';
 	const PROCESS_URL_TEST = 'https://api-3t.sandbox.paypal.com/nvp';
 
@@ -48,47 +45,49 @@ class Merchant_paypal_pro extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
-		$card_name = explode(' ', $params['card_name'], 2);
+		$this->require_params('reference', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc');
+
+		$card_name = explode(' ', $this->param('card_name'), 2);
 
 		$data = array(
-			'USER' => $this->settings['username'],
-			'PWD' => $this->settings['password'],
-			'SIGNATURE' => $this->settings['signature'],
+			'USER' => $this->setting('username'),
+			'PWD' => $this->setting('password'),
+			'SIGNATURE' => $this->setting('signature'),
 			'VERSION' => '65.1',
 			'METHOD' => 'doDirectPayment',
 			'PAYMENTACTION' => 'Sale',
-			'AMT' => sprintf('%01.2f', $params['amount']),
-			'CURRENCYCODE' => $params['currency_code'],
-			'ACCT' => $params['card_no'],
-			'EXPDATE' => $params['exp_month'].$params['exp_year'],
-			'CVV2' => $params['csc'],
+			'AMT' => sprintf('%01.2f', $this->param('amount')),
+			'CURRENCYCODE' => $this->param('currency'),
+			'ACCT' => $this->param('card_no'),
+			'EXPDATE' => $this->param('exp_month').$this->param('exp_year'),
+			'CVV2' => $this->param('csc'),
 			'IPADDRESS' => $this->CI->input->ip_address(),
 			'FIRSTNAME' => $card_name[0],
 			'LASTNAME' => isset($card_name[1]) ? $card_name[1] : '',
 		);
 
-		if (isset($params['card_type']))
+		if (isset($this->param('card_type')))
 		{
-			$data['CREDITCARDTYPE'] = ucfirst($params['card_type']);
+			$data['CREDITCARDTYPE'] = ucfirst($this->param('card_type'));
 			if ($data['CREDITCARDTYPE'] == 'Mastercard') $data['CREDITCARDTYPE'] = 'MasterCard';
 		}
 
-		if (isset($params['card_issue'])) $data['ISSUENUMBER'] = $params['card_issue'];
-		if (isset($params['start_month']) AND isset($params['start_year']))
+		if (isset($this->param('card_issue'))) $data['ISSUENUMBER'] = $this->param('card_issue');
+		if (isset($this->param('start_month')) AND isset($this->param('start_year')))
 		{
-			$data['STARTDATE'] = $params['start_month'].$params['start_year'];
+			$data['STARTDATE'] = $this->param('start_month').$this->param('start_year');
 		}
 
-		if (isset($params['address'])) $data['STREET'] = $params['address'];
-		if (isset($params['city'])) $data['CITY'] = $params['city'];
-		if (isset($params['region'])) $data['STATE'] = $params['region'];
-		if (isset($params['postcode'])) $data['ZIP'] = $params['postcode'];
-		if (isset($params['country'])) $data['COUNTRYCODE'] = strtoupper($params['country']);
+		if (isset($this->param('address'))) $data['STREET'] = $this->param('address');
+		if (isset($this->param('city'))) $data['CITY'] = $this->param('city');
+		if (isset($this->param('region'))) $data['STATE'] = $this->param('region');
+		if (isset($this->param('postcode'))) $data['ZIP'] = $this->param('postcode');
+		if (isset($this->param('country'))) $data['COUNTRYCODE'] = strtoupper($this->param('country'));
 
 		// send request to paypal
-		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
+		$response = Merchant::curl_helper($this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$response_array = array();

@@ -35,8 +35,6 @@ class Merchant_worldpay extends Merchant_driver
 	const PROCESS_URL = 'https://secure.worldpay.com/wcc/purchase';
 	const PROCESS_URL_TEST = 'https://secure-test.worldpay.com/wcc/purchase';
 
-	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
-
 	public function default_settings()
 	{
 		return array(
@@ -47,43 +45,45 @@ class Merchant_worldpay extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('reference', 'return_url');
+
 		$data = array(
-			'instId' => $this->settings['installation_id'],
-			'cartId' => $params['reference'],
-			'amount' => $params['amount'],
-			'currency' => $params['currency_code'],
-			'testMode' => $this->settings['test_mode'] ? 100 : 0,
-			'MC_callback' => $params['return_url'],
+			'instId' => $this->setting('installation_id'),
+			'cartId' => $this->param('reference'),
+			'amount' => $this->param('amount'),
+			'currency' => $this->param('currency'),
+			'testMode' => $this->setting('test_mode') ? 100 : 0,
+			'MC_callback' => $this->param('return_url'),
 		);
 
-		if ( ! empty($params['card_name'])) $data['name'] = $params['card_name'];
-		if ( ! empty($params['address'])) $data['address1'] = $params['address'];
-		if ( ! empty($params['address2'])) $data['address2'] = $params['address2'];
-		if ( ! empty($params['city'])) $data['town'] = $params['city'];
-		if ( ! empty($params['region'])) $data['region'] = $params['region'];
-		if ( ! empty($params['postcode'])) $data['postcode'] = $params['postcode'];
-		if ( ! empty($params['country'])) $data['country'] = $params['country'];
-		if ( ! empty($params['phone'])) $data['tel'] = $params['phone'];
-		if ( ! empty($params['email'])) $data['email'] = $params['email'];
+		if ( ! empty($this->param('card_name'))) $data['name'] = $this->param('card_name');
+		if ( ! empty($this->param('address'))) $data['address1'] = $this->param('address');
+		if ( ! empty($this->param('address2'))) $data['address2'] = $this->param('address2');
+		if ( ! empty($this->param('city'))) $data['town'] = $this->param('city');
+		if ( ! empty($this->param('region'))) $data['region'] = $this->param('region');
+		if ( ! empty($this->param('postcode'))) $data['postcode'] = $this->param('postcode');
+		if ( ! empty($this->param('country'))) $data['country'] = $this->param('country');
+		if ( ! empty($this->param('phone'))) $data['tel'] = $this->param('phone');
+		if ( ! empty($this->param('email'))) $data['email'] = $this->param('email');
 
-		if ( ! empty($this->settings['secret']))
+		if ( ! empty($this->setting('secret')))
 		{
 			$data['signatureFields'] = 'instId:amount:currency:cartId';
-			$signature_data = array($this->settings['secret'],
+			$signature_data = array($this->setting('secret'),
 				$data['instId'], $data['amount'], $data['currency'], $data['cartId']);
 			$data['signature'] = md5(implode(':', $signature_data));
 		}
 
-		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+		$post_url = $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
 		Merchant::redirect_post($post_url, $data);
 	}
 
-	public function process_return($params)
+	public function purchase_return()
 	{
 		$callback_pw = (string)$this->CI->input->post('callbackPW');
-		if ($callback_pw != $this->settings['payment_response_password'])
+		if ($callback_pw != $this->setting('payment_response_password'))
 		{
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}

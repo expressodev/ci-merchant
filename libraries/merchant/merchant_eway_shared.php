@@ -35,8 +35,6 @@ class Merchant_eway_shared extends Merchant_driver
 	const PROCESS_URL = 'https://au.ewaygateway.com/Request/';
 	const PROCESS_RETURN_URL = 'https://au.ewaygateway.com/Result/';
 
-	public $required_fields = array('amount', 'currency_code', 'reference', 'return_url', 'cancel_url');
-
 	public function default_settings()
 	{
 		return array(
@@ -51,25 +49,27 @@ class Merchant_eway_shared extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('reference', 'return_url', 'cancel_url');
+
 		$this->CI->load->helper('url');
 
 		$data = array(
-			'CustomerID' => $this->settings['customer_id'],
-			'UserName' => $this->settings['username'],
-			'Amount' => sprintf('%01.2f', $params['amount']),
-			'Currency' => $params['currency_code'],
-			'PageTitle' => $this->settings['page_title'],
-			'PageDescription' => $this->settings['page_description'],
-			'PageFooter' => $this->settings['page_footer'],
-			'PageBanner' => $this->settings['page_banner'],
+			'CustomerID' => $this->setting('customer_id'),
+			'UserName' => $this->setting('username'),
+			'Amount' => sprintf('%01.2f', $this->param('amount')),
+			'Currency' => $this->param('currency'),
+			'PageTitle' => $this->setting('page_title'),
+			'PageDescription' => $this->setting('page_description'),
+			'PageFooter' => $this->setting('page_footer'),
+			'PageBanner' => $this->setting('page_banner'),
 			'Language' => 'EN',
-			'CompanyName' => $this->settings['company_name'],
-			'CompanyLogo' => $this->settings['company_logo'],
-			'CancelUrl' => $params['cancel_url'],
-			'ReturnUrl' => $params['return_url'],
-			'MerchantReference' => $params['reference'],
+			'CompanyName' => $this->setting('company_name'),
+			'CompanyLogo' => $this->setting('company_logo'),
+			'CancelUrl' => $this->param('cancel_url'),
+			'ReturnUrl' => $this->param('return_url'),
+			'MerchantReference' => $this->param('reference'),
 		);
 
 		$response = Merchant::curl_helper(self::PROCESS_URL.'?'.http_build_query($data));
@@ -92,7 +92,7 @@ class Merchant_eway_shared extends Merchant_driver
 		}
 	}
 
-	public function process_return($params)
+	public function purchase_return()
 	{
 		if (($payment_code = $this->CI->input->get_post('AccessPaymentCode')) === FALSE)
 		{
@@ -100,8 +100,8 @@ class Merchant_eway_shared extends Merchant_driver
 		}
 
 		$data = array(
-			'CustomerID' => $this->settings['customer_id'],
-			'UserName' => $this->settings['username'],
+			'CustomerID' => $this->setting('customer_id'),
+			'UserName' => $this->setting('username'),
 			'AccessPaymentCode' => $_REQUEST['AccessPaymentCode'],
 		);
 

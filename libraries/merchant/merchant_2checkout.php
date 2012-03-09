@@ -32,8 +32,6 @@
 
 class Merchant_2checkout extends Merchant_driver
 {
-	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
-
 	const PROCESS_URL = 'https://www.2checkout.com/checkout/purchase';
 
 	public function default_settings()
@@ -45,17 +43,19 @@ class Merchant_2checkout extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('reference', 'return_url');
+
 		// post data to 2checkout
 		$data = array(
-			'sid' => $this->settings['account_no'],
-			'cart_order_id' => $params['reference'],
-			'total' => $params['amount'],
-			'tco_currency' => $params['currency_code'],
+			'sid' => $this->setting('account_no'),
+			'cart_order_id' => $this->param('reference'),
+			'total' => $this->param('amount'),
+			'tco_currency' => $this->param('currency'),
 			'fixed' => 'Y',
 			'skip_landing' => 1,
-			'x_receipt_link_url' => $params['return_url'],
+			'x_receipt_link_url' => $this->param('return_url'),
 		);
 
 		foreach (array(
@@ -75,7 +75,7 @@ class Merchant_2checkout extends Merchant_driver
 			}
 		}
 
-		if ($this->settings['test_mode'])
+		if ($this->setting('test_mode'))
 		{
 			$data['demo'] = 'Y';
 		}
@@ -83,17 +83,17 @@ class Merchant_2checkout extends Merchant_driver
 		Merchant::redirect_post(self::PROCESS_URL, $data);
 	}
 
-	public function process_return($params)
+	public function purchase_return()
 	{
 		$order_number = $this->CI->input->post('order_number');
 		$order_total = $this->CI->input->post('total');
 
-		if ($this->settings['test_mode'])
+		if ($this->setting('test_mode'))
 		{
 			$order_number = '1';
 		}
 
-		$check = strtoupper(md5($this->settings['secret_word'].$this->settings['account_no'].$order_number.$order_total));
+		$check = strtoupper(md5($this->setting('secret_word').$this->setting('account_no').$order_number.$order_total));
 
 		if ($check == $this->CI->input->post('key'))
 		{

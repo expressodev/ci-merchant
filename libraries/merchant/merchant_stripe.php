@@ -34,8 +34,6 @@ class Merchant_stripe extends Merchant_driver
 {
 	const API_ENDPOINT = 'https://api.stripe.com';
 
-	public $required_fields = array('amount', 'token', 'currency_code', 'reference');
-
 	public function default_settings()
 	{
 		return array(
@@ -43,16 +41,18 @@ class Merchant_stripe extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('token', 'reference');
+
 		$request = array(
-			'amount' => round($params['amount'] * 100),
-			'card' => $params['token'],
-			'currency' => strtolower($params['currency_code']),
-			'description' => $params['reference'],
+			'amount' => round($this->param('amount') * 100),
+			'card' => $this->param('token'),
+			'currency' => strtolower($this->param('currency')),
+			'description' => $this->param('reference'),
 		);
 
-		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->settings['api_key']);
+		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->setting('api_key'));
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$data = json_decode($response['data']);

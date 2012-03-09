@@ -35,8 +35,6 @@ class Merchant_eway extends Merchant_driver
 	const PROCESS_URL = 'https://www.eway.com.au/gateway_cvn/xmlpayment.asp';
 	const PROCESS_URL_TEST =  'https://www.eway.com.au/gateway_cvn/xmltest/testpage.asp';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
-
 	public function default_settings()
 	{
 		return array(
@@ -45,21 +43,23 @@ class Merchant_eway extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'reference');
+
 		// eway thows HTML formatted error if customerid is missing
-		if (empty($this->settings['customer_id'])) return new Merchant_response(Merchant_response::FAILED, 'Missing Customer ID!');
+		if (empty($this->setting('customer_id'))) return new Merchant_response(Merchant_response::FAILED, 'Missing Customer ID!');
 
 		$request = '<ewaygateway>'.
-	      		'<ewayCustomerID>'.$this->settings['customer_id'].'</ewayCustomerID>'.
-	      		'<ewayTotalAmount>'.round($params['amount'] * 100).'</ewayTotalAmount>'.
+	      		'<ewayCustomerID>'.$this->setting('customer_id').'</ewayCustomerID>'.
+	      		'<ewayTotalAmount>'.round($this->param('amount') * 100).'</ewayTotalAmount>'.
 	      		'<ewayCustomerInvoiceDescription></ewayCustomerInvoiceDescription>'.
-	      		'<ewayCustomerInvoiceRef>'.$params['reference'].'</ewayCustomerInvoiceRef>'.
-	      		'<ewayCardHoldersName>'.$params['card_name'].'</ewayCardHoldersName>'.
-	      		'<ewayCardNumber>'.$params['card_no'].'</ewayCardNumber>'.
-	      		'<ewayCardExpiryMonth>'.$params['exp_month'].'</ewayCardExpiryMonth>'.
-	      		'<ewayCardExpiryYear>'.($params['exp_year'] % 100).'</ewayCardExpiryYear>'.
-	      		'<ewayCVN>'.$params['csc'].'</ewayCVN>'.
+	      		'<ewayCustomerInvoiceRef>'.$this->param('reference').'</ewayCustomerInvoiceRef>'.
+	      		'<ewayCardHoldersName>'.$this->param('card_name').'</ewayCardHoldersName>'.
+	      		'<ewayCardNumber>'.$this->param('card_no').'</ewayCardNumber>'.
+	      		'<ewayCardExpiryMonth>'.$this->param('exp_month').'</ewayCardExpiryMonth>'.
+	      		'<ewayCardExpiryYear>'.($this->param('exp_year') % 100).'</ewayCardExpiryYear>'.
+	      		'<ewayCVN>'.$this->param('csc').'</ewayCVN>'.
 	      		'<ewayTrxnNumber></ewayTrxnNumber>'.
 				'<ewayCustomerFirstName></ewayCustomerFirstName>'.
 				'<ewayCustomerLastName></ewayCustomerLastName>'.
@@ -71,7 +71,7 @@ class Merchant_eway extends Merchant_driver
 				'<ewayOption3></ewayOption3>'.
 			'</ewaygateway>';
 
-		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $request);
+		$response = Merchant::curl_helper($this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL, $request);
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$xml = simplexml_load_string($response['data']);

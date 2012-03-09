@@ -32,8 +32,6 @@
 
 class Merchant_authorize_net_sim extends Merchant_driver
 {
-	public $required_fields = array('amount', 'reference', 'return_url');
-
 	const PROCESS_URL = 'https://secure.authorize.net/gateway/transact.dll';
 	const PROCESS_URL_TEST = 'https://test.authorize.net/gateway/transact.dll';
 
@@ -52,44 +50,46 @@ class Merchant_authorize_net_sim extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
-		$fp_sequence = $params['reference'];
+		$this->require_params('reference', 'return_url');
+
+		$fp_sequence = $this->param('reference');
 		$time = time();
 
 		$fingerprint = AuthorizeNetSIM_Form::getFingerprint(
-			$this->settings['api_login_id'],
-			$this->settings['transaction_key'],
-			$params['amount'],
+			$this->setting('api_login_id'),
+			$this->setting('transaction_key'),
+			$this->param('amount'),
 			$fp_sequence,
 			$time
 		);
 
 		$data = array(
-			'x_amount' => $params['amount'],
+			'x_amount' => $this->param('amount'),
 			'x_delim_data' => 'FALSE',
 			'x_fp_sequence' => $fp_sequence,
 			'x_fp_hash' => $fingerprint,
 			'x_fp_timestamp' => $time,
-			'x_invoice_num' => $params['reference'],
+			'x_invoice_num' => $this->param('reference'),
 			'x_relay_response' => 'TRUE',
-			'x_relay_url' => $params['return_url'],
-			'x_login' => $this->settings['api_login_id'],
+			'x_relay_url' => $this->param('return_url'),
+			'x_login' => $this->setting('api_login_id'),
 			'x_show_form' => 'PAYMENT_FORM',
 			'x_customer_ip' => $this->CI->input->ip_address(),
 		);
 
 		// set extra billing details if we have them
-		if (isset($params['card_name']))
+		if (isset($this->param('card_name')))
 		{
-			$names = explode(' ', $params['card_name'], 2);
+			$names = explode(' ', $this->param('card_name'), 2);
 			$data['x_first_name'] = $names[0];
 			$data['x_last_name'] = isset($names[1]) ? $names[1] : '';
 		}
 
-		if (isset($params['address']) AND isset($params['address2']))
+		if (isset($this->param('address')) AND isset($this->param('address2')))
 		{
-			$params['address'] = trim($params['address']." \n".$params['address2']);
+			$this->param('address') = trim($this->param('address')." \n".$this->param('address2'));
 		}
 
 		foreach (array(
@@ -110,13 +110,13 @@ class Merchant_authorize_net_sim extends Merchant_driver
 
 		$sim = new AuthorizeNetSIM_Form($data);
 
-		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST: self::PROCESS_URL;
+		$post_url = $this->setting('test_mode') ? self::PROCESS_URL_TEST: self::PROCESS_URL;
 		Merchant::redirect_post($post_url, $sim->getHiddenFieldString());
 	}
 
-	public function process_return($params)
+	public function purchase_return()
 	{
-		$response = new AuthorizeNetSIM($this->settings['api_login_id']);
+		$response = new AuthorizeNetSIM($this->setting('api_login_id'));
 
   		if ($response->approved)
   		{

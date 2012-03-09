@@ -32,8 +32,6 @@
 
 class Merchant_paypal extends Merchant_driver
 {
-	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
-
 	const PROCESS_URL = 'https://www.paypal.com/cgi-bin/webscr';
 	const PROCESS_URL_TEST = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
 
@@ -45,28 +43,30 @@ class Merchant_paypal extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('reference', 'return_url');
+
 		// ask paypal to generate request url
 		$data = array(
 			'cmd' => '_xclick',
 			'paymentaction' => 'sale',
-			'business' => $this->settings['paypal_email'],
-			'amount' => sprintf('%01.2f', $params['amount']),
-			'currency_code' => $params['currency_code'],
-			'item_name' => $params['reference'],
-			'return'=> $params['return_url'],
-			'cancel_return' => $params['cancel_url'],
-			'notify_url' => $params['return_url'],
+			'business' => $this->setting('paypal_email'),
+			'amount' => sprintf('%01.2f', $this->param('amount')),
+			'currency_code' => $this->param('currency'),
+			'item_name' => $this->param('reference'),
+			'return'=> $this->param('return_url'),
+			'cancel_return' => $this->param('cancel_url'),
+			'notify_url' => $this->param('return_url'),
 			'rm' => '2',
 			'no_shipping' => 1,
 		);
 
-		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+		$post_url = $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
 		Merchant::redirect_post($post_url, $data);
 	}
 
-	public function process_return($params)
+	public function purchase_return()
 	{
 		$txn_id = $this->CI->input->post('txn_id');
 		if (empty($txn_id))
@@ -75,14 +75,14 @@ class Merchant_paypal extends Merchant_driver
 		}
 
 		// verify payee
-		if ($this->CI->input->post('receiver_email') != $this->settings['paypal_email'])
+		if ($this->CI->input->post('receiver_email') != $this->setting('paypal_email'))
 		{
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
 		// verify response
 		$post_string = 'cmd=_notify-validate&'.http_build_query($_POST);
-		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $post_string);
+		$response = Merchant::curl_helper($this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL, $post_string);
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		if ($response['data'] != 'VERIFIED')

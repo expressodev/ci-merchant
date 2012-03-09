@@ -32,8 +32,6 @@
 
 class Merchant_authorize_net extends Merchant_driver
 {
-	public $required_fields = array('amount','card_no','exp_month','exp_year','csc','reference');
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -49,28 +47,30 @@ class Merchant_authorize_net extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
-		$transaction = new AuthorizeNetAIM($this->settings['api_login_id'],$this->settings['transaction_key']);
-		$transaction->amount = $params['amount'];
-		$transaction->card_num = $params['card_no'];
-		$transaction->exp_date = $params['exp_month'].$params['exp_year'];
-		$transaction->card_code = $params['csc'];
-		$transaction->invoice_num = $params['reference'];
+		$this->require_params('card_no', 'exp_month', 'exp_year', 'csc', 'reference');
+
+		$transaction = new AuthorizeNetAIM($this->setting('api_login_id'),$this->setting('transaction_key'));
+		$transaction->amount = $this->param('amount');
+		$transaction->card_num = $this->param('card_no');
+		$transaction->exp_date = $this->param('exp_month').$this->param('exp_year');
+		$transaction->card_code = $this->param('csc');
+		$transaction->invoice_num = $this->param('reference');
 		$transaction->customer_ip = $this->CI->input->ip_address();
-		$transaction->setSandbox((bool)$this->settings['test_mode']);
+		$transaction->setSandbox((bool)$this->setting('test_mode'));
 
 		// set extra billing details if we have them
-		if (isset($params['card_name']))
+		if (isset($this->param('card_name')))
 		{
-			$names = explode(' ', $params['card_name'], 2);
+			$names = explode(' ', $this->param('card_name'), 2);
 			$transaction->first_name = $names[0];
 			$transaction->last_name = isset($names[1]) ? $names[1] : '';
 		}
 
-		if (isset($params['address']) AND isset($params['address2']))
+		if (isset($this->param('address')) AND isset($this->param('address2')))
 		{
-			$params['address'] = trim($params['address']." \n".$params['address2']);
+			$this->param('address') = trim($this->param('address')." \n".$this->param('address2'));
 		}
 
 		foreach (array(

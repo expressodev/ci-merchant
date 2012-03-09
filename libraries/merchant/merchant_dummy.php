@@ -34,16 +34,16 @@ class Merchant_dummy extends Merchant_driver
 {
 	const DUMMY_CARD = '4111111111111111';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code');
-
 	public function default_settings()
 	{
 		return array();
 	}
 
-	public function process($params)
+	public function purchase()
 	{
-		if ($params['card_no'] == self::DUMMY_CARD)
+		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc');
+
+		if ($this->param('card_no') == self::DUMMY_CARD)
 		{
 			return new Merchant_response(Merchant_response::COMPLETED);
 		}

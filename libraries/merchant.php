@@ -367,6 +367,16 @@ abstract class Merchant_driver
 		return $this->settings;
 	}
 
+	/**
+	 * Setting
+	 *
+	 * @return  mixed
+	 */
+	public function setting($key)
+	{
+		return isset($this->settings[$key]) ? $this->settings[$key] : FALSE;
+	}
+
 	public function can_authorize()
 	{
 		$method = new ReflectionMethod($this, 'authorize');

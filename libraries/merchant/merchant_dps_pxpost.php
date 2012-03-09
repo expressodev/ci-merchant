@@ -34,8 +34,6 @@ class Merchant_dps_pxpost extends Merchant_driver
 {
 	const PROCESS_URL = 'https://sec.paymentexpress.com/pxpost.aspx';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
-
 	public function default_settings()
 	{
 		return array(
@@ -45,23 +43,25 @@ class Merchant_dps_pxpost extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
-		$date_expiry = $params['exp_month'];
-		$date_expiry .= $params['exp_year'] % 100;
+		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'reference');
+
+		$date_expiry = $this->param('exp_month');
+		$date_expiry .= $this->param('exp_year') % 100;
 
 		$request = '<Txn>'.
-				'<PostUsername>'.$this->settings['username'].'</PostUsername>'.
-				'<PostPassword>'.$this->settings['password'].'</PostPassword>'.
-				'<CardHolderName>'.htmlspecialchars($params['card_name']).'</CardHolderName>'.
-				'<CardNumber>'.$params['card_no'].'</CardNumber>'.
-				'<Amount>'.sprintf('%01.2f', $params['amount']).'</Amount>'.
+				'<PostUsername>'.$this->setting('username').'</PostUsername>'.
+				'<PostPassword>'.$this->setting('password').'</PostPassword>'.
+				'<CardHolderName>'.htmlspecialchars($this->param('card_name')).'</CardHolderName>'.
+				'<CardNumber>'.$this->param('card_no').'</CardNumber>'.
+				'<Amount>'.sprintf('%01.2f', $this->param('amount')).'</Amount>'.
 				'<DateExpiry>'.$date_expiry.'</DateExpiry>'.
-				'<Cvc2>'.$params['csc'].'</Cvc2>'.
-				'<InputCurrency>'.$params['currency_code'].'</InputCurrency>'.
+				'<Cvc2>'.$this->param('csc').'</Cvc2>'.
+				'<InputCurrency>'.$this->param('currency').'</InputCurrency>'.
 				'<TxnType>Purchase</TxnType>'.
-				'<MerchantReference>'.$params['reference'].'</MerchantReference>'.
-				'<EnableAddBillCard>'.(int)$this->settings['enable_token_billing'].'</EnableAddBillCard>'.
+				'<MerchantReference>'.$this->param('reference').'</MerchantReference>'.
+				'<EnableAddBillCard>'.(int)$this->setting('enable_token_billing').'</EnableAddBillCard>'.
 			'</Txn>';
 
 		$response = Merchant::curl_helper(self::PROCESS_URL, $request);

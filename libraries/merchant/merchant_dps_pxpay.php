@@ -34,8 +34,6 @@ class Merchant_dps_pxpay extends Merchant_driver
 {
 	const PROCESS_URL = 'https://sec.paymentexpress.com/pxpay/pxaccess.aspx';
 
-	public $required_fields = array('email', 'amount', 'reference', 'currency_code', 'return_url', 'cancel_url');
-
 	public function default_settings()
 	{
 		return array(
@@ -45,22 +43,24 @@ class Merchant_dps_pxpay extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('email', 'reference', 'return_url', 'cancel_url');
+
 		$this->CI->load->helper('url');
 
 		// ask DPS to generate request url
 		$request = '<GenerateRequest>'.
-			'<PxPayUserId>'.$this->settings['user_id'].'</PxPayUserId>'.
-			'<PxPayKey>'.$this->settings['key'].'</PxPayKey>'.
-			'<AmountInput>'.sprintf('%01.2f', $params['amount']).'</AmountInput>'.
-			'<CurrencyInput>'.$params['currency_code'].'</CurrencyInput>'.
-			'<EmailAddress>'.$params['email'].'</EmailAddress>'.
-			'<MerchantReference>'.$params['reference'].'</MerchantReference>'.
+			'<PxPayUserId>'.$this->setting('user_id').'</PxPayUserId>'.
+			'<PxPayKey>'.$this->setting('key').'</PxPayKey>'.
+			'<AmountInput>'.sprintf('%01.2f', $this->param('amount')).'</AmountInput>'.
+			'<CurrencyInput>'.$this->param('currency').'</CurrencyInput>'.
+			'<EmailAddress>'.$this->param('email').'</EmailAddress>'.
+			'<MerchantReference>'.$this->param('reference').'</MerchantReference>'.
 			'<TxnType>Purchase</TxnType>'.
-			'<UrlSuccess>'.$params['return_url'].'</UrlSuccess>'.
-			'<UrlFail>'.$params['cancel_url'].'</UrlFail>'.
-			'<EnableAddBillCard>'.(int)$this->settings['enable_token_billing'].'</EnableAddBillCard>'.
+			'<UrlSuccess>'.$this->param('return_url').'</UrlSuccess>'.
+			'<UrlFail>'.$this->param('cancel_url').'</UrlFail>'.
+			'<EnableAddBillCard>'.(int)$this->setting('enable_token_billing').'</EnableAddBillCard>'.
 			'</GenerateRequest>';
 
 		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
@@ -83,14 +83,14 @@ class Merchant_dps_pxpay extends Merchant_driver
 		}
 	}
 
-	public function process_return($params)
+	public function purchase_return()
 	{
 		if ($this->CI->input->get('result', TRUE) === FALSE) return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 
 		// validate dps response
 		$request = '<ProcessResponse>'.
-			'<PxPayUserId>'.$this->settings['user_id'].'</PxPayUserId>'.
-			'<PxPayKey>'.$this->settings['key'].'</PxPayKey>'.
+			'<PxPayUserId>'.$this->setting('user_id').'</PxPayUserId>'.
+			'<PxPayKey>'.$this->setting('key').'</PxPayKey>'.
 			'<Response>'.$this->CI->input->get('result', TRUE).'</Response>'.
 			'</ProcessResponse>';
 

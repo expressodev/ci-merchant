@@ -40,9 +40,6 @@ class Merchant_sagepay_direct extends Merchant_driver
 	const AUTH_URL_TEST = 'https://test.sagepay.com/gateway/service/direct3dcallback.vsp';
 	const AUTH_URL_SIM = 'https://test.sagepay.com/Simulator/VSPDirectCallback.asp';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'card_type',
-		'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
-
 	public function default_settings()
 	{
 		return array(
@@ -52,40 +49,43 @@ class Merchant_sagepay_direct extends Merchant_driver
 		);
 	}
 
-	public function process($params)
+	public function purchase()
 	{
+		$this->require_params('card_no', 'card_name', 'card_type',
+			'exp_month', 'exp_year', 'csc', 'reference');
+
 		$data = array(
 			'VPSProtocol' => '2.23',
 			'TxType' => 'PAYMENT',
-			'Vendor' => $this->settings['vendor'],
-			'Description' => $params['reference'],
-			'Amount' => sprintf('%01.2f', $params['amount']),
-			'Currency' => $params['currency_code'],
-			'CardHolder' => $params['card_name'],
-			'CardNumber' => $params['card_no'],
-			'CV2' => $params['csc'],
-			'CardType' => strtoupper($params['card_type']),
-			'ExpiryDate' => $params['exp_month'].($params['exp_year'] % 100),
+			'Vendor' => $this->setting('vendor'),
+			'Description' => $this->param('reference'),
+			'Amount' => sprintf('%01.2f', $this->param('amount')),
+			'Currency' => $this->param('currency'),
+			'CardHolder' => $this->param('card_name'),
+			'CardNumber' => $this->param('card_no'),
+			'CV2' => $this->param('csc'),
+			'CardType' => strtoupper($this->param('card_type')),
+			'ExpiryDate' => $this->param('exp_month').($this->param('exp_year') % 100),
 			'ClientIPAddress' => $this->CI->input->ip_address(),
 			'ApplyAVSCV2' => 0,
 			'Apply3DSecure' => 0,
 		);
 
 		// SagePay requires a unique VendorTxCode for each transaction
-		$data['VendorTxCode'] = $params['transaction_id'].'-'.mt_rand(100000000, 999999999);
+		$data['VendorTxCode'] = $this->param('transaction_id').'-'.mt_rand(100000000, 999999999);
 
 		if ($data['CardType'] == 'MASTERCARD') $data['CardType'] = 'MC';
 
-		if (isset($params['card_name']))
+		if (isset($this->param('card_name')))
 		{
-			$names = explode(' ', $params['card_name'], 2);
+			$names = explode(' ', $this->param('card_name'), 2);
 			$data['BillingFirstnames'] = $names[0];
 			$data['BillingSurname'] = isset($names[1]) ? $names[1] : '';
 			$data['DeliveryFirstnames'] = $data['BillingFirstnames'];
 			$data['DeliverySurname'] = $data['BillingSurname'];
 		}
 
-		if (isset($params['email'])) $data['CustomerEMail'] = $params['email'];
+		if (isset($this->param('email'))) $data['CustomerEMail'] = $this->param('email');
 
 		foreach (array(
 				'Address1' => 'address',
@@ -103,26 +103,26 @@ class Merchant_sagepay_direct extends Merchant_driver
 			}
 		}
 
-		if (isset($params['country']))
+		if (isset($this->param('country')))
 		{
-			$data['BillingCountry'] = $params['country'] == 'uk' ? 'gb' : $params['country'];
+			$data['BillingCountry'] = $this->param('country') == 'uk' ? 'gb' : $this->param('country');
 			$data['DeliveryCountry'] = $data['BillingCountry'];
 		}
 
-		if ( ! empty($params['card_issue']))
+		if ( ! empty($this->param('card_issue')))
 		{
-			$data['IssueNumber'] = $params['card_issue'];
+			$data['IssueNumber'] = $this->param('card_issue');
 		}
-		if ( ! empty($params['start_month']) AND ! empty($params['start_year']))
+		if ( ! empty($this->param('start_month')) AND ! empty($this->param('start_year')))
 		{
-			$data['StartDate'] = $params['start_month'].($params['start_year'] % 100);
+			$data['StartDate'] = $this->param('start_month').($this->param('start_year') % 100);
 		}
 
-		if ($this->settings['simulator'])
+		if ($this->setting('simulator'))
 		{
 			$process_url = self::PROCESS_URL_SIM;
 		}
-		elseif ($this->settings['test_mode'])
+		elseif ($this->setting('test_mode'))
 		{
 			$process_url = self::PROCESS_URL_TEST;
 		}
@@ -140,7 +140,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 	/**
 	 * Only used for returning from 3D Secure Authentication
 	 */
-	public function process_return($params)
+	public function purchase_return()
 	{
 		$data = array(
 			'MD' => $this->CI->input->post('MD'),
@@ -152,11 +152,11 @@ class Merchant_sagepay_direct extends Merchant_driver
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
-		if ($this->settings['simulator'])
+		if ($this->setting('simulator'))
 		{
 			$auth_url = self::AUTH_URL_SIM;
 		}
-		elseif ($this->settings['test_mode'])
+		elseif ($this->setting('test_mode'))
 		{
 			$auth_url = self::AUTH_URL_TEST;
 		}
@@ -185,7 +185,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 
 		if ($response['Status'] == 'OK')
 		{
-			return new Merchant_response(Merchant_response::COMPLETED, $message, $txn_id, (double)$params['amount']);
+			return new Merchant_response(Merchant_response::COMPLETED, $message, $txn_id, (double)$this->param('amount'));
 		}
 
 		if ($response['Status'] == '3DAUTH')
@@ -193,7 +193,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 			// redirect to card issuer for 3D Authentication
 			$data = array(
 				'PaReq' => $response['PAReq'],
-				'TermUrl' => $params['return_url'],
+				'TermUrl' => $this->param('return_url'),
 				'MD' => $response['MD'],
 			);
 			Merchant::redirect_post($response['ACSURL'], $data, 'Please wait while we redirect you to your card issuer for authentication...');
