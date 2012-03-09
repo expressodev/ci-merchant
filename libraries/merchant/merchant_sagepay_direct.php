@@ -45,7 +45,8 @@ class Merchant_sagepay_direct extends Merchant_driver
 
 	public $settings = array(
 		'vendor' => '',
-		'test_mode' => FALSE
+		'test_mode' => FALSE,
+		'simulator' => FALSE,
 	);
 
 	public $CI;
@@ -61,7 +62,6 @@ class Merchant_sagepay_direct extends Merchant_driver
 			'VPSProtocol' => '2.23',
 			'TxType' => 'PAYMENT',
 			'Vendor' => $this->settings['vendor'],
-			'VendorTxCode' => $params['reference'],
 			'Description' => $params['reference'],
 			'Amount' => sprintf('%01.2f', $params['amount']),
 			'Currency' => $params['currency_code'],
@@ -75,7 +75,43 @@ class Merchant_sagepay_direct extends Merchant_driver
 			'Apply3DSecure' => 0,
 		);
 
+		// SagePay requires a unique VendorTxCode for each transaction
+		$data['VendorTxCode'] = $params['transaction_id'].'-'.mt_rand(100000000, 999999999);
+
 		if ($data['CardType'] == 'MASTERCARD') $data['CardType'] = 'MC';
+
+		if (isset($params['card_name']))
+		{
+			$names = explode(' ', $params['card_name'], 2);
+			$data['BillingFirstnames'] = $names[0];
+			$data['BillingSurname'] = isset($names[1]) ? $names[1] : '';
+			$data['DeliveryFirstnames'] = $data['BillingFirstnames'];
+			$data['DeliverySurname'] = $data['BillingSurname'];
+		}
+
+		if (isset($params['email'])) $data['CustomerEMail'] = $params['email'];
+
+		foreach (array(
+				'Address1' => 'address',
+				'Address2' => 'address2',
+				'City' => 'city',
+				'PostCode' => 'postcode',
+				'State' => 'region',
+				'Phone' => 'phone',
+			) as $field => $param)
+		{
+			if (isset($params[$param]))
+			{
+				$data["Billing$field"] = $params[$param];
+				$data["Delivery$field"] = $params[$param];
+			}
+		}
+
+		if (isset($params['country']))
+		{
+			$data['BillingCountry'] = $params['country'] == 'uk' ? 'gb' : $params['country'];
+			$data['DeliveryCountry'] = $data['BillingCountry'];
+		}
 
 		if ( ! empty($params['card_issue']))
 		{
@@ -86,7 +122,20 @@ class Merchant_sagepay_direct extends Merchant_driver
 			$data['StartDate'] = $params['start_month'].($params['start_year'] % 100);
 		}
 
-		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
+		if ($this->settings['simulator'])
+		{
+			$process_url = self::PROCESS_URL_SIM;
+		}
+		elseif ($this->settings['test_mode'])
+		{
+			$process_url = self::PROCESS_URL_TEST;
+		}
+		else
+		{
+			$process_url = self::PROCESS_URL;
+		}
+
+		$response = Merchant::curl_helper($process_url, $data);
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		return $this->_process_response($response['data'], $params);
@@ -107,7 +156,20 @@ class Merchant_sagepay_direct extends Merchant_driver
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
-		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::AUTH_URL_TEST : self::AUTH_URL, $data);
+		if ($this->settings['simulator'])
+		{
+			$auth_url = self::AUTH_URL_SIM;
+		}
+		elseif ($this->settings['test_mode'])
+		{
+			$auth_url = self::AUTH_URL_TEST;
+		}
+		else
+		{
+			$auth_url = self::AUTH_URL;
+		}
+
+		$response = Merchant::curl_helper($auth_url, $data);
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		return $this->_process_response($response['data'], $params);
