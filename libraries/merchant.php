@@ -99,25 +99,22 @@ class Merchant
 			$driver_class = 'Merchant_'.strtolower($driver);
 		}
 
-		$instance = NULL;
-		if (class_exists($driver_class))
+		if ( ! class_exists($driver_class))
 		{
-			$instance = new $driver_class;
-		}
-		else
-		{
+			// attempt to load driver file
 			$driver_path = MERCHANT_DRIVER_PATH.'/'.strtolower($driver_class).'.php';
-			if (file_exists($driver_path))
-			{
-				require_once($driver_path);
-				if (class_exists($driver_class))
-				{
-					$instance = new $driver_class;
-				}
-			}
+			if ( ! file_exists($driver_path)) return FALSE;
+			require_once($driver_path);
+
+			// did the driver file implement the class?
+			if ( ! class_exists($driver_class)) return FALSE;
 		}
 
-		if (empty($instance)) return FALSE;
+		// ensure class is not abstract
+		$reflection_class = new ReflectionClass($driver_class);
+		if ($reflection_class->isAbstract()) return FALSE;
+
+		$instance = new $driver_class();
 
 		// backwards compatible with drivers which don't have $default_settings array
 		if (empty($instance->default_settings))
@@ -157,20 +154,27 @@ class Merchant
 		}
 	}
 
-	public function get_valid_drivers()
+	public function valid_drivers()
 	{
-		$valid_drivers = array();
+		static $valid_drivers = array();
 
-		foreach (scandir(MERCHANT_DRIVER_PATH) as $file_name)
+		if (empty($valid_drivers))
 		{
-			$driver_path = MERCHANT_DRIVER_PATH.'/'.$file_name;
-			if (stripos($file_name, 'merchant_') === 0 AND is_file($driver_path))
+			foreach (scandir(MERCHANT_DRIVER_PATH) as $file_name)
 			{
-				require_once($driver_path);
-
-				$driver_class = ucfirst(str_replace('.php', '', $file_name));
-				if (class_exists($driver_class))
+				$driver_path = MERCHANT_DRIVER_PATH.'/'.$file_name;
+				if (stripos($file_name, 'merchant_') === 0 AND is_file($driver_path))
 				{
+					require_once($driver_path);
+
+					// does the file implement an appropriately named class?
+					$driver_class = ucfirst(str_replace('.php', '', $file_name));
+					if ( ! class_exists($driver_class)) continue;
+
+					// ensure class is not abstract
+					$reflection_class = new ReflectionClass($driver_class);
+					if ($reflection_class->isAbstract()) continue;
+
 					$valid_drivers[] = str_replace('Merchant_', '', $driver_class);
 				}
 			}
