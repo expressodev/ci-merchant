@@ -40,17 +40,13 @@ class Merchant_dummy extends Merchant_driver
 
 	public function process($params)
 	{
-		$date = getdate();
-		if ($params['card_no'] == self::DUMMY_CARD AND (
-				$params['exp_year'] > $date['year'] OR
-				($params['exp_year'] == $date['year'] AND $params['exp_month'] >= $date['mon'])
-			))
+		if ($params['card_no'] == self::DUMMY_CARD)
 		{
-			return new Merchant_response('authorized', 'The transaction was authorized', null, $params['amount']);
+			return new Merchant_response(Merchant_response::COMPLETED);
 		}
 		else
 		{
-			return new Merchant_response('declined', 'The transaction was declined');
+			return new Merchant_response(Merchant_response::FAILED, 'The transaction was declined');
 		}
 	}
 }

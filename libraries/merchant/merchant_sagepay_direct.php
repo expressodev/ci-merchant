@@ -87,7 +87,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 		}
 
 		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		return $this->_process_response($response['data'], $params);
 	}
@@ -104,11 +104,11 @@ class Merchant_sagepay_direct extends Merchant_driver
 
 		if (empty($data['MD']) OR empty($data['PARes']))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
 		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::AUTH_URL_TEST : self::AUTH_URL, $data);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		return $this->_process_response($response['data'], $params);
 	}
@@ -119,7 +119,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 
 		if (empty($response['Status']))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
 		$txn_id = empty($response['VPSTxId']) ? NULL : $response['VPSTxId'];
@@ -127,7 +127,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 
 		if ($response['Status'] == 'OK')
 		{
-			return new Merchant_response('authorized', $message, $txn_id, (double)$params['amount']);
+			return new Merchant_response(Merchant_response::COMPLETED, $message, $txn_id, (double)$params['amount']);
 		}
 
 		if ($response['Status'] == '3DAUTH')
@@ -141,7 +141,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 			Merchant::redirect_post($response['ACSURL'], $data, 'Please wait while we redirect you to your card issuer for authentication...');
 		}
 
-		return new Merchant_response('declined', $message, $txn_id);
+		return new Merchant_response(Merchant_response::FAILED, $message, $txn_id);
 	}
 
 	/**

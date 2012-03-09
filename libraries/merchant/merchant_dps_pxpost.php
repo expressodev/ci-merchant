@@ -62,21 +62,21 @@ class Merchant_dps_pxpost extends Merchant_driver
 			'</Txn>';
 
 		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$xml = simplexml_load_string($response['data']);
 
 		if ( ! isset($xml->Success))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($xml->Success == '1')
 		{
-			return new Merchant_response('authorized', (string)$xml->HelpText, (string)$xml->DpsTxnRef, (string)$xml->Transaction->Amount);
+			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->HelpText, (string)$xml->DpsTxnRef, (string)$xml->Transaction->Amount);
 		}
 		else
 		{
-			return new Merchant_response('declined', (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+			return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
 		}
 	}
 }

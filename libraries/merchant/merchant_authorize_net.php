@@ -92,16 +92,10 @@ class Merchant_authorize_net extends Merchant_driver
 
 		if ($response->approved)
 		{
-			return new Merchant_response('authorized', $response->response_reason_text, $response->transaction_id, (double)$response->amount);
+			return new Merchant_response(Merchant_response::COMPLETED, $response->response_reason_text, $response->transaction_id, (double)$response->amount);
 		}
-		elseif ($response->declined)
-		{
-			return new Merchant_response('declined', $response->response_reason_text);
-		}
-		else
-		{
-			return new Merchant_response('failed', $response->response_reason_text);
-		}
+
+		return new Merchant_response(Merchant_response::FAILED, $response->response_reason_text);
 	}
 }
 /* End of file ./libraries/merchant/drivers/merchant_authorize_net.php */

@@ -93,26 +93,26 @@ class Merchant_paypal_pro extends Merchant_driver
 
 		// send request to paypal
 		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$response_array = array();
 		parse_str($response['data'], $response_array);
 
 		if (empty($response_array['ACK']))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($response_array['ACK'] == 'Success' OR $response_array['ACK'] == 'SuccessWithWarning')
 		{
-			return new Merchant_response('authorized', '', $response_array['TRANSACTIONID'], (double)$response_array['AMT']);
+			return new Merchant_response(Merchant_response::COMPLETED, '', $response_array['TRANSACTIONID'], (double)$response_array['AMT']);
 		}
 		elseif ($response_array['ACK'] == 'Failure' OR $response_array['ACK'] == 'FailureWithWarning')
 		{
-			return new Merchant_response('declined', $response_array['L_ERRORCODE0'].': '.$response_array['L_LONGMESSAGE0']);
+			return new Merchant_response(Merchant_response::FAILED, $response_array['L_ERRORCODE0'].': '.$response_array['L_LONGMESSAGE0']);
 		}
 		else
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 	}
 }

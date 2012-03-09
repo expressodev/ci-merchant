@@ -101,12 +101,10 @@ class Merchant_2checkout extends Merchant_driver
 
 		if ($check == $this->CI->input->post('key'))
 		{
-			return new Merchant_response('authorized', '', $this->CI->input->post('order_number'), (float)$order_total);
+			return new Merchant_response(Merchant_response::COMPLETED, NULL, $this->CI->input->post('order_number'));
 		}
-		else
-		{
-			return new Merchant_response('failed', 'invalid_response');
-		}
+
+		return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 	}
 }
 

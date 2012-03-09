@@ -37,11 +37,11 @@ class Merchant_worldpay extends Merchant_driver
 
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
-	public $settings = array(
+	public $default_settings = array(
 		'installation_id' => '',
 		'secret' => '',
 		'payment_response_password' => '',
-		'test_mode' => FALSE
+		'test_mode' => FALSE,
 	);
 
 	public $CI;
@@ -89,24 +89,24 @@ class Merchant_worldpay extends Merchant_driver
 		$callback_pw = (string)$this->CI->input->post('callbackPW');
 		if ($callback_pw != $this->settings['payment_response_password'])
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
 		$status = $this->CI->input->post('transStatus');
 		if (empty($status))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($status != 'Y')
 		{
 			$message = $this->CI->input->post('rawAuthMessage');
-			return new Merchant_response('declined', $message);
+			return new Merchant_response(Merchant_response::FAILED, $message);
 		}
 		else
 		{
 			$transaction_id = $this->CI->input->post('transId');
 			$amount = $this->CI->input->post('authAmount');
-			return new Merchant_response('authorized', '', $transaction_id, $amount);
+			return new Merchant_response(Merchant_response::COMPLETED, NULL, $transaction_id, $amount);
 		}
 	}
 }

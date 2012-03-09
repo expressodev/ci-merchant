@@ -39,7 +39,9 @@ define('MERCHANT_DRIVER_PATH', realpath(dirname(__FILE__).'/merchant'));
  */
 class Merchant
 {
-	protected $_driver;
+	public static $CURRENCIES_WITHOUT_DECIMALS = array('JPY');
+
+	private $_driver;
 
 	public function __construct($driver = NULL)
 	{
@@ -88,7 +90,7 @@ class Merchant
 	 * Load and create a new instance of a driver.
 	 * $driver can be specified either as a class name (Merchant_paypal) or a short name (paypal)
 	 */
-	protected function _create_instance($driver)
+	private function _create_instance($driver)
 	{
 		if (stripos($driver, 'merchant_') === 0)
 		{
@@ -183,58 +185,109 @@ class Merchant
 		return $valid_drivers;
 	}
 
-	public function process($params = array())
+	public function authorize($params)
 	{
-		if (isset($params['card_no']) AND empty($_SERVER['HTTPS']))
-		{
-			show_error('Card details were not submitted over a secure connection.');
-		}
+		return $this->_do_authorize_or_purchase('authorize', $params);
+	}
 
-		if (is_array($this->_driver->required_fields))
+	public function authorize_return($params)
+	{
+		return $this->_do_authorize_or_purchase('authorize_return', $params);
+	}
+
+	public function capture($params)
+	{
+		return $this->_do_capture_or_refund('capture', $params);
+	}
+
+	public function purchase($params)
+	{
+		return $this->_do_authorize_or_purchase('purchase', $params);
+	}
+
+	public function purchase_return($params)
+	{
+		return $this->_do_authorize_or_purchase('purchase_return', $params);
+	}
+
+	public function refund($params)
+	{
+		return $this->_do_capture_or_refund('refund', $params);
+	}
+
+	private function _do_authorize_or_purchase($method, $params)
+	{
+		$this->_normalize_card_params($params);
+		$this->_normalize_currency_params($params);
+
+		try
 		{
-			foreach ($this->_driver->required_fields as $field_name)
+			// load driver params
+			$this->_driver->set_params($params);
+
+			// all payments require amount and currency
+			$this->_driver->require_params('amount', 'currency');
+
+			// support drivers using deprecated required_fields array
+			if (($method == 'authorize' OR $method == 'purchase') AND
+				! empty($this->_driver->required_fields))
 			{
-				if (empty($params[$field_name]))
-				{
-					$response = new Merchant_response('failed', 'field_missing');
-					$response->error_field = $field_name;
-					return $response;
-				}
+				$this->_driver->require_params($this->_driver->required_fields);
 			}
-		}
 
+			// validate card_no
+			$this->_driver->validate_card();
+
+			// begin the actual processing
+			return $this->_driver->$method();
+		}
+		catch (Merchant_exception $e)
+		{
+			return new Merchant_response(Merchant_response::FAILED, $e->getMessage());
+		}
+	}
+
+	private function _do_capture_or_refund($method, $params)
+	{
+		$this->_normalize_currency_params($params);
+
+		try
+		{
+			// load driver params
+			$this->_driver->set_params($params);
+
+			// begin the actual processing
+			return $this->_driver->$method();
+		}
+		catch (Merchant_exception $e)
+		{
+			return new Merchant_response(Merchant_response::FAILED, $e->message);
+		}
+	}
+
+	private function _normalize_card_params(&$params)
+	{
 		// normalize months to 2 digits and years to 4
-		if (isset($params['exp_month'])) $params['exp_month'] = sprintf('%02d', (int)$params['exp_month']);
-		if (isset($params['exp_year'])) $params['exp_year'] = sprintf('%04d', (int)$params['exp_year']);
-		if (isset($params['start_month'])) $params['start_month'] = sprintf('%02d', (int)$params['start_month']);
-		if (isset($params['start_year'])) $params['start_year'] = sprintf('%04d', (int)$params['start_year']);
+		if ( ! empty($params['exp_month'])) $params['exp_month'] = sprintf('%02d', (int)$params['exp_month']);
+		if ( ! empty($params['exp_year'])) $params['exp_year'] = sprintf('%04d', (int)$params['exp_year']);
+		if ( ! empty($params['start_month'])) $params['start_month'] = sprintf('%02d', (int)$params['start_month']);
+		if ( ! empty($params['start_year'])) $params['start_year'] = sprintf('%04d', (int)$params['start_year']);
 
 		// normalize card_type to lowercase
 		if (isset($params['card_type'])) $params['card_type'] = strtolower($params['card_type']);
-
-		// DEPRECATED: old _process() function
-		if (method_exists($this->_driver, '_process'))
-		{
-			return $this->_driver->_process($params);
-		}
-
-		return $this->_driver->process($params);
 	}
 
-	public function process_return($params = array())
+	private function _normalize_currency_params(&$params)
 	{
-		if (method_exists($this->_driver, 'process_return'))
+		// support deprecated currency_code parameter
+		if (isset($params['currency_code']))
 		{
-			return $this->_driver->process_return($params);
+			$params['currency'] =& $params['currency_code'];
 		}
-
-		// DEPRECATED: Old _process_return() function doesn't accept params array
-		if (method_exists($this->_driver, '_process_return'))
+		elseif (isset($params['currency']))
 		{
-			return $this->_driver->_process_return();
+			$params['currency_code'] =& $params['currency'];
 		}
-
-		return new Merchant_response('failed', 'return_not_supported');
 	}
 
 	/**
@@ -308,24 +361,295 @@ class Merchant
 abstract class Merchant_driver
 {
 	public $default_settings = array();
-	public $settings;
-	public $required_fields;
+	public $settings = array();
+	protected $_params = array();
+	protected $CI;
+
+	public function __construct()
+	{
+		$this->CI =& get_instance();
+	}
+
+	public function can_authorize()
+	{
+		$method = new ReflectionMethod($this, 'authorize');
+		return $method->getDeclaringClass()->name !== __CLASS__;
+	}
+
+	public function can_refund()
+	{
+		$method = new ReflectionMethod($this, 'refund');
+		return $method->getDeclaringClass()->name !== __CLASS__;
+	}
+
+	public function can_return()
+	{
+		$method = new ReflectionMethod($this, 'purchase_return');
+		if ($method->getDeclaringClass()->name !== __CLASS__) return TRUE;
+
+		// try calling deprecated process_return() method instead
+		if (method_exists($this, 'process_return')) return TRUE;
+		if (method_exists($this, '_process_return')) return TRUE;
+
+		return FALSE;
+	}
+
+	public function authorize()
+	{
+		throw new BadMethodCallException("Method not supported by this gateway.");
+	}
+
+	public function authorize_return()
+	{
+		throw new BadMethodCallException("Method not supported by this gateway.");
+	}
+
+	public function capture()
+	{
+		throw new BadMethodCallException("Method not supported by this gateway.");
+	}
+
+	public function purchase()
+	{
+		// try calling deprecated process() method instead
+		if (method_exists($this, 'process'))
+		{
+			return $this->process($this->_params);
+		}
+
+		if (method_exists($this, '_process'))
+		{
+			return $this->_process($this->_params);
+		}
+
+		throw new BadMethodCallException("Method not supported by this gateway.");
+	}
+
+	public function purchase_return()
+	{
+		// try calling deprecated process_return() method instead
+		if (method_exists($this, 'process_return'))
+		{
+			return $this->process_return($this->_params);
+		}
+
+		if (method_exists($this, '_process_return'))
+		{
+			return $this->_process_return($this->_params);
+		}
+
+		throw new BadMethodCallException("Method not supported by this gateway.");
+	}
+
+	public function refund()
+	{
+		throw new BadMethodCallException("Method not supported by this gateway.");
+	}
+
+	public function param($name)
+	{
+		return isset($this->_params[$name]) ? $this->_params[$name] : FALSE;
+	}
+
+	public function set_params($params)
+	{
+		$this->_params = array_merge($this->_params, $params);
+	}
+
+	public function require_params()
+	{
+		$args = func_get_args();
+		if (empty($args)) return;
+
+		// also accept an array instead of multiple parameters
+		if (count($args) == 1 AND is_array($args[0])) $args = $args[0];
+
+		foreach ($args as $name)
+		{
+			if (empty($this->_params[$name]))
+			{
+				throw new Merchant_exception(str_replace('%s', $name, "The %s field is required."));
+			}
+		}
+	}
+
+	public function validate_card()
+	{
+		// skip validation if card_no is empty
+		if (empty($this->_params['card_no'])) return;
+
+		if ( ! $this->secure_request())
+		{
+			throw new Merchant_exception('Card details must be submitted over a secure connection.');
+		}
+
+		// strip any non-digits from card_no
+		$this->_params['card_no'] = preg_replace('/\D/', '', $this->_params['card_no']);
+
+		if ($this->validate_luhn($this->_params['card_no']) == FALSE)
+		{
+			throw new Merchant_exception('Invalid card number.');
+		}
+
+		if ( ! empty($this->_params['exp_month']) AND ! empty($this->_params['exp_year']) AND
+			$this->validate_expiry($this->_params['exp_month'], $this->_params['exp_year']) == FALSE)
+		{
+			throw new Merchant_exception('Credit card has expired.');
+		}
+	}
+
+	/**
+	 * Luhn algorithm number checker - (c) 2005-2008 shaman - www.planzero.org
+	 * This code has been released into the public domain, however please
+	 * give credit to the original author where possible.
+	 *
+	 * @return boolean TRUE if the number is valid
+	 */
+	protected function validate_luhn($number)
+	{
+		// Set the string length and parity
+		$number_length = strlen($number);
+		$parity = $number_length % 2;
+
+		// Loop through each digit and do the maths
+		$total = 0;
+		for ($i = 0; $i < $number_length; $i++)
+		{
+			$digit = $number[$i];
+			// Multiply alternate digits by two
+			if ($i % 2 == $parity)
+			{
+				$digit *= 2;
+				// If the sum is two digits, add them together (in effect)
+				if ($digit > 9)
+				{
+					$digit -= 9;
+				}
+			}
+			// Total up the digits
+			$total += $digit;
+		}
+
+		// If the total mod 10 equals 0, the number is valid
+		return ($total % 10 == 0) ? TRUE : FALSE;
+	}
+
+	/**
+	 * Check whether an expiry date has already passed
+	 *
+	 * @return bool TRUE if the expiry date is valid
+	 */
+	protected function validate_expiry($month, $year)
+	{
+		// subtract 12 hours from current GMT time to avoid potential timezone issues
+		// in this rare case we will leave it up to the payment gateway to decide
+		$date = getdate(gmmktime() - 43200); // 12*60*60
+
+		if ($year < $date['year'])
+		{
+			return FALSE;
+		}
+
+		if ($year == $date['year'] AND $month < $date['mon'])
+		{
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Returns TRUE if the current request was made using HTTPS
+	 */
+	protected function secure_request()
+	{
+		if (empty($_SERVER['HTTPS']) OR strtolower($_SERVER['HTTPS']) == 'off')
+		{
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	protected function amount_dollars()
+	{
+		if (in_array($this->_params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
+		{
+			return (int)$this->_params['currency'];
+		}
+
+		return sprintf('%01.2f', $this->_params['amount']);
+	}
+
+	protected function amount_cents()
+	{
+		if (in_array($this->_params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
+		{
+			return (int)$this->_params['currency'];
+		}
+
+		return round($this->_params['amount'] * 100);
+	}
 }
+
+class Merchant_exception extends Exception {}
 
 class Merchant_response
 {
-	public $status;
-	public $message;
-	public $txn_id;
-	public $amount;
-	public $error_field;
+	const AUTHORIZED = 'authorized';
+	const COMPLETED = 'completed';
+	const FAILED = 'failed';
+	const REFUNDED = 'refunded';
 
-	public function __construct($status, $message, $txn_id = null, $amount = null)
+	/**
+	 * @var string one of 'authorized', 'completed', 'failed', or 'refunded'
+	 */
+	protected $_status;
+
+	/**
+	 * @var string a message returned by the payment gateway
+	 */
+	protected $_message;
+
+	/**
+	 * @var string a transaction id returned by the payment gateway
+	 */
+	protected $_transaction_id;
+
+	public function __construct($status, $message = NULL, $transaction_id = NULL)
 	{
-		$this->status = $status;
-		$this->message = $message;
-		$this->txn_id = $txn_id;
-		$this->amount = $amount;
+		// support deprecated 'declined' status
+		if ($status == 'declined') $status = self::FAILED;
+
+		// always require a valid status
+		if ( ! in_array($status, array(self::AUTHORIZED, self::COMPLETED, self::FAILED, self::REFUNDED)))
+		{
+			throw new InvalidArgumentException('Invalid payment status');
+		}
+
+		$this->_status = $status;
+		$this->_message = $message;
+		$this->_transaction_id = $transaction_id;
+	}
+
+	public function status()
+	{
+		return $this->_status;
+	}
+
+	public function success()
+	{
+		return $this->_status !== self::FAILED;
+	}
+
+	public function message()
+	{
+		return $this->_message;
+	}
+
+	public function transaction_id()
+	{
+		return $this->_transaction_id;
 	}
 }
 

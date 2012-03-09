@@ -45,7 +45,7 @@ class Merchant_eway extends Merchant_driver
 	public function process($params)
 	{
 		// eway thows HTML formatted error if customerid is missing
-		if (empty($this->settings['customer_id'])) return new Merchant_response('failed', 'Missing Customer ID!');
+		if (empty($this->settings['customer_id'])) return new Merchant_response(Merchant_response::FAILED, 'Missing Customer ID!');
 
 		$request = '<ewaygateway>'.
 	      		'<ewayCustomerID>'.$this->settings['customer_id'].'</ewayCustomerID>'.
@@ -69,21 +69,21 @@ class Merchant_eway extends Merchant_driver
 			'</ewaygateway>';
 
 		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$xml = simplexml_load_string($response['data']);
 
 		if ( ! isset($xml->ewayTrxnStatus))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($xml->ewayTrxnStatus == 'True')
 		{
-			return new Merchant_response('authorized', (string)$xml->ewayTrxnError, (string)$xml->ewayTrxnNumber, ((double)$xml->ewayReturnAmount) / 100);
+			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->ewayTrxnError, (string)$xml->ewayTrxnNumber, ((double)$xml->ewayReturnAmount) / 100);
 		}
 		else
 		{
-			return new Merchant_response('declined', (string)$xml->ewayTrxnError);
+			return new Merchant_response(Merchant_response::FAILED, (string)$xml->ewayTrxnError);
 		}
 	}
 }

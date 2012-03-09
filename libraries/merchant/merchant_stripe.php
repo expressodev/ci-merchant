@@ -50,16 +50,16 @@ class Merchant_stripe extends Merchant_driver
 		);
 
 		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->settings['api_key']);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$data = json_decode($response['data']);
 		if (isset($data->error))
 		{
-			return new Merchant_response('declined', $data->error->message);
+			return new Merchant_response(Merchant_response::FAILED, $data->error->message);
 		}
 		else
 		{
-			return new Merchant_response('authorized', '', $data->id, $data->amount / 100);
+			return new Merchant_response(Merchant_response::COMPLETED, '', $data->id, $data->amount / 100);
 		}
 	}
 }

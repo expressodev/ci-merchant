@@ -119,16 +119,10 @@ class Merchant_authorize_net_sim extends Merchant_driver
 
   		if ($response->approved)
   		{
-			return new Merchant_response('authorized', (string)$response->response_reason_text, (string)$response->trans_id, (string)$response->amount);
+			return new Merchant_response(Merchant_response::COMPLETED, (string)$response->response_reason_text, (string)$response->trans_id, (string)$response->amount);
 		}
-		elseif ($response->declined)
-		{
-			return new Merchant_response('declined', (string)$response->response_reason_text);
-		}
-		else
-		{
-			return new Merchant_response('failed', (string)$response->response_reason_text);
-		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$response->response_reason_text);
 	}
 }
 /* End of file ./libraries/merchant/drivers/merchant_authorize_net_sim.php */

@@ -77,14 +77,14 @@ class Merchant_eway_shared extends Merchant_driver
 		);
 
 		$response = Merchant::curl_helper(self::PROCESS_URL.'?'.http_build_query($data));
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$xml = simplexml_load_string($response['data']);
 
 		// redirect to payment page
 		if (empty($xml) OR ! isset($xml->Result))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($xml->Result == 'True')
 		{
@@ -92,7 +92,7 @@ class Merchant_eway_shared extends Merchant_driver
 		}
 		else
 		{
-			return new Merchant_response('failed', (string)$xml->Error);
+			return new Merchant_response(Merchant_response::FAILED, (string)$xml->Error);
 		}
 	}
 
@@ -100,7 +100,7 @@ class Merchant_eway_shared extends Merchant_driver
 	{
 		if (($payment_code = $this->CI->input->get_post('AccessPaymentCode')) === FALSE)
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
 		$data = array(
@@ -110,21 +110,21 @@ class Merchant_eway_shared extends Merchant_driver
 		);
 
 		$response = Merchant::curl_helper(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$xml = simplexml_load_string($response['data']);
 
 		if ( ! isset($xml->TrxnStatus))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($xml->TrxnStatus == 'True')
 		{
-			return new Merchant_response('authorized', '', (string)$xml->TrxnNumber, (double)$xml->ReturnAmount);
+			return new Merchant_response(Merchant_response::COMPLETED, '', (string)$xml->TrxnNumber, (double)$xml->ReturnAmount);
 		}
 		else
 		{
-			return new Merchant_response('declined', (string)$xml->TrxnResponseMessage, (string)$xml->TrxnNumber);
+			return new Merchant_response(Merchant_response::FAILED, (string)$xml->TrxnResponseMessage, (string)$xml->TrxnNumber);
 		}
 	}
 }

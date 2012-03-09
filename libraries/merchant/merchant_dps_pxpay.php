@@ -68,14 +68,14 @@ class Merchant_dps_pxpay extends Merchant_driver
 			'</GenerateRequest>';
 
 		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$xml = simplexml_load_string($response['data']);
 
 		// redirect to hosted payment page
 		if (empty($xml) OR ! isset($xml->attributes()->valid))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($xml->attributes()->valid == 1)
 		{
@@ -83,13 +83,13 @@ class Merchant_dps_pxpay extends Merchant_driver
 		}
 		else
 		{
-			return new Merchant_response('failed', (string)$xml->URI);
+			return new Merchant_response(Merchant_response::FAILED, (string)$xml->URI);
 		}
 	}
 
 	public function process_return($params)
 	{
-		if ($this->CI->input->get('result', TRUE) === FALSE) return new Merchant_response('failed', 'invalid_response');
+		if ($this->CI->input->get('result', TRUE) === FALSE) return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 
 		// validate dps response
 		$request = '<ProcessResponse>'.
@@ -99,21 +99,19 @@ class Merchant_dps_pxpay extends Merchant_driver
 			'</ProcessResponse>';
 
 		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$xml = simplexml_load_string($response['data']);
 		if ( ! isset($xml->Success))
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 		elseif ($xml->Success == '1')
 		{
-			return new Merchant_response('authorized', (string)$xml->ResponseText, (string)$xml->DpsTxnRef, (double)$xml->AmountSettlement);
+			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef, (double)$xml->AmountSettlement);
 		}
-		else
-		{
-			return new Merchant_response('declined', (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
-		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
 	}
 }
 

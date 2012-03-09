@@ -75,33 +75,33 @@ class Merchant_paypal extends Merchant_driver
 		$txn_id = $this->CI->input->post('txn_id');
 		if (empty($txn_id))
 		{
-			return new Merchant_response('failed', 'payment_cancelled');
+			return new Merchant_response(Merchant_response::FAILED, 'payment_cancelled');
 		}
 
 		// verify payee
 		if ($this->CI->input->post('receiver_email') != $this->settings['paypal_email'])
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
 		// verify response
 		$post_string = 'cmd=_notify-validate&'.http_build_query($_POST);
 		$response = Merchant::curl_helper($this->settings['test_mode'] ? self::PROCESS_URL_TEST : self::PROCESS_URL, $post_string);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		if ($response['data'] != 'VERIFIED')
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
 		$payment_status = $this->CI->input->post('payment_status');
 		if ($payment_status == 'Completed')
 		{
 			$amount = (float)$this->CI->input->post('mc_gross');
-			return new Merchant_response('authorized', NULL, $txn_id, $amount);
+			return new Merchant_response(Merchant_response::COMPLETED, NULL, $txn_id, $amount);
 		}
 
-		return new Merchant_response('declined', $payment_status);
+		return new Merchant_response(Merchant_response::FAILED, $payment_status);
 	}
 }
 

@@ -20,14 +20,14 @@ Quick Start
 	));
 
 	// process payment
-	$this->merchant->process(array(
+	$this->merchant->purchase(array(
 		'amount' => 99.00,
-		'currency_code' => 'USD',
+		'currency' => 'USD',
 		'reference' => 'Order #50'
 	));
 
 	// process return from payment gateway (hosted payment gateways only)
-	$this->merchant->process_return();
+	$this->merchant->purchase_return();
 
 License
 -------
