@@ -36,11 +36,14 @@ class Merchant_dps_pxpost extends Merchant_driver
 
 	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
 
-	public $settings = array(
-		'username' => '',
-		'password' => '',
-		'enable_token_billing' => FALSE,
-	);
+	public function default_settings()
+	{
+		return array(
+			'username' => '',
+			'password' => '',
+			'enable_token_billing' => FALSE,
+		);
+	}
 
 	public function process($params)
 	{

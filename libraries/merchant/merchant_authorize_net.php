@@ -32,20 +32,21 @@
 
 class Merchant_authorize_net extends Merchant_driver
 {
-	public $settings = array(
-		'api_login_id' => '',
-		'transaction_key' => '',
-		'test_mode' => FALSE,
-	);
-
 	public $required_fields = array('amount','card_no','exp_month','exp_year','csc','reference');
-
-	public $CI;
 
 	public function __construct()
 	{
-		$this->CI =& get_instance();
+		parent::__construct();
 		require_once MERCHANT_VENDOR_PATH.'/AuthorizeNet/AuthorizeNet.php';
+	}
+
+	public function default_settings()
+	{
+		return array(
+			'api_login_id' => '',
+			'transaction_key' => '',
+			'test_mode' => FALSE,
+		);
 	}
 
 	public function process($params)

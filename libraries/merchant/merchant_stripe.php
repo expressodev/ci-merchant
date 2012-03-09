@@ -36,9 +36,12 @@ class Merchant_stripe extends Merchant_driver
 
 	public $required_fields = array('amount', 'token', 'currency_code', 'reference');
 
-	public $settings = array(
-		'api_key' => '',
-	);
+	public function default_settings()
+	{
+		return array(
+			'api_key' => '',
+		);
+	}
 
 	public function process($params)
 	{

@@ -37,22 +37,18 @@ class Merchant_eway_shared extends Merchant_driver
 
 	public $required_fields = array('amount', 'currency_code', 'reference', 'return_url', 'cancel_url');
 
-	public $settings = array(
-		'customer_id' => '',
-		'username' => '',
-		'company_name' => '',
-		'company_logo' => '',
-		'page_title' => '',
-		'page_banner' => '',
-		'page_description' => '',
-		'page_footer' => '',
-	);
-
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
+		return array(
+			'customer_id' => '',
+			'username' => '',
+			'company_name' => '',
+			'company_logo' => '',
+			'page_title' => '',
+			'page_banner' => '',
+			'page_description' => '',
+			'page_footer' => '',
+		);
 	}
 
 	public function process($params)

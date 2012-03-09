@@ -34,19 +34,15 @@ class Merchant_2checkout extends Merchant_driver
 {
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
-	public $settings = array(
-		'account_no' => '',
-		'secret_word' => '',
-		'test_mode' => FALSE
-	);
-
 	const PROCESS_URL = 'https://www.2checkout.com/checkout/purchase';
 
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
+		return array(
+			'account_no' => '',
+			'secret_word' => '',
+			'test_mode' => FALSE
+		);
 	}
 
 	public function process($params)

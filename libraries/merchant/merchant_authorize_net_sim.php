@@ -32,23 +32,24 @@
 
 class Merchant_authorize_net_sim extends Merchant_driver
 {
-	public $settings = array(
-		'api_login_id' => '',
-		'transaction_key' => '',
-		'test_mode' => FALSE,
-	);
-
 	public $required_fields = array('amount', 'reference', 'return_url');
 
 	const PROCESS_URL = 'https://secure.authorize.net/gateway/transact.dll';
 	const PROCESS_URL_TEST = 'https://test.authorize.net/gateway/transact.dll';
 
-	public $CI;
-
 	public function __construct()
 	{
-		$this->CI =& get_instance();
+		parent::__construct();
 		require_once MERCHANT_VENDOR_PATH.'/AuthorizeNet/AuthorizeNet.php';
+	}
+
+	public function default_settings()
+	{
+		return array(
+			'api_login_id' => '',
+			'transaction_key' => '',
+			'test_mode' => FALSE,
+		);
 	}
 
 	public function process($params)

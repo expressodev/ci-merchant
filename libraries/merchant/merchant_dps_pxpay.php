@@ -36,17 +36,13 @@ class Merchant_dps_pxpay extends Merchant_driver
 
 	public $required_fields = array('email', 'amount', 'reference', 'currency_code', 'return_url', 'cancel_url');
 
-	public $settings = array(
-		'user_id' => '',
-		'key' => '',
-		'enable_token_billing' => FALSE
-	);
-
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
+		return array(
+			'user_id' => '',
+			'key' => '',
+			'enable_token_billing' => FALSE
+		);
 	}
 
 	public function process($params)

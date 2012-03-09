@@ -37,18 +37,14 @@ class Merchant_worldpay extends Merchant_driver
 
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
-	public $default_settings = array(
-		'installation_id' => '',
-		'secret' => '',
-		'payment_response_password' => '',
-		'test_mode' => FALSE,
-	);
-
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI = get_instance();
+		return array(
+			'installation_id' => '',
+			'secret' => '',
+			'payment_response_password' => '',
+			'test_mode' => FALSE,
+		);
 	}
 
 	public function process($params)

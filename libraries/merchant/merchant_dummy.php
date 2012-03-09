@@ -36,7 +36,10 @@ class Merchant_dummy extends Merchant_driver
 
 	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code');
 
-	public $settings = array();
+	public function default_settings()
+	{
+		return array();
+	}
 
 	public function process($params)
 	{

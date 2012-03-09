@@ -37,10 +37,13 @@ class Merchant_eway extends Merchant_driver
 
 	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
 
-	public $settings = array(
-		'customer_id' => '',
-		'test_mode' => FALSE
-	);
+	public function default_settings()
+	{
+		return array(
+			'customer_id' => '',
+			'test_mode' => FALSE
+		);
+	}
 
 	public function process($params)
 	{

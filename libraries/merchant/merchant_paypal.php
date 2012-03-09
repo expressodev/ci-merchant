@@ -34,19 +34,15 @@ class Merchant_paypal extends Merchant_driver
 {
 	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
 
-	public $settings = array(
-		'paypal_email' => '',
-		'test_mode' => FALSE
-	);
-
 	const PROCESS_URL = 'https://www.paypal.com/cgi-bin/webscr';
 	const PROCESS_URL_TEST = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
 
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
+		return array(
+			'paypal_email' => '',
+			'test_mode' => FALSE,
+		);
 	}
 
 	public function process($params)

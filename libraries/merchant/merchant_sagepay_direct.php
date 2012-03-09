@@ -43,17 +43,13 @@ class Merchant_sagepay_direct extends Merchant_driver
 	public $required_fields = array('amount', 'card_no', 'card_name', 'card_type',
 		'exp_month', 'exp_year', 'csc', 'currency_code', 'reference');
 
-	public $settings = array(
-		'vendor' => '',
-		'test_mode' => FALSE,
-		'simulator' => FALSE,
-	);
-
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
+		return array(
+			'vendor' => '',
+			'test_mode' => FALSE,
+			'simulator' => FALSE,
+		);
 	}
 
 	public function process($params)

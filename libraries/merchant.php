@@ -59,14 +59,6 @@ class Merchant
 		}
 	}
 
-	public function __get($property)
-	{
-		if ( ! empty($this->_driver))
-		{
-			return $this->_driver->$property;
-		}
-	}
-
 	/**
 	 * Load the specified driver
 	 */
@@ -116,44 +108,7 @@ class Merchant
 		$reflection_class = new ReflectionClass($driver_class);
 		if ($reflection_class->isAbstract()) return FALSE;
 
-		$instance = new $driver_class();
-
-		// backwards compatible with drivers which don't have $default_settings array
-		if (empty($instance->default_settings))
-		{
-			$instance->default_settings = $instance->settings;
-		}
-
-		// initialize default settings
-		$instance->settings = array();
-		foreach ($instance->default_settings as $key => $setting)
-		{
-			if (is_array($setting))
-			{
-				$instance->settings[$key] = isset($setting['default']) ? $setting['default'] : NULL;
-			}
-			else
-			{
-				$instance->settings[$key] = $setting;
-			}
-		}
-
-		return $instance;
-	}
-
-	public function initialize($settings)
-	{
-		if ( ! is_array($settings)) return;
-
-		foreach ($settings as $key => $value)
-		{
-			if (isset($this->_driver->settings[$key]))
-			{
-				if (is_bool($this->_driver->settings[$key])) $value = (bool)$value;
-
-				$this->_driver->settings[$key] = $value;
-			}
-		}
+		return new $driver_class();
 	}
 
 	public function valid_drivers()
@@ -360,14 +315,56 @@ class Merchant
 
 abstract class Merchant_driver
 {
-	public $default_settings = array();
-	public $settings = array();
-	protected $_params = array();
 	protected $CI;
+	protected $settings = array();
+	protected $params = array();
 
 	public function __construct()
 	{
 		$this->CI =& get_instance();
+
+		// initialize default settings
+		foreach ($this->default_settings() as $key => $default)
+		{
+			if (is_array($default))
+			{
+				$this->settings[$key] = isset($default['default']) ? $default['default'] : NULL;
+			}
+			else
+			{
+				$this->settings[$key] = $default;
+			}
+		}
+	}
+
+	/**
+	 * Default settings. This should be overridden by the driver.
+	 */
+	public abstract function default_settings();
+
+	/**
+	 * Initialize the driver settings
+	 */
+	public function initialize($settings)
+	{
+		foreach ($this->default_settings() as $key => $default)
+		{
+			if (isset($settings[$key]))
+			{
+				// boolean settings must remain booleans
+				$this->settings[$key] = is_bool($default) ? (bool)$settings[$key] : $settings[$key];
+			}
+		}
+	}
+
+	/**
+	 * All driver settings
+	 *
+	 * @return array
+	 */
+	public function settings()
+	{
+		return $this->settings;
 	}
 
 	public function can_authorize()
@@ -414,12 +411,12 @@ abstract class Merchant_driver
 		// try calling deprecated process() method instead
 		if (method_exists($this, 'process'))
 		{
-			return $this->process($this->_params);
+			return $this->process($this->params);
 		}
 
 		if (method_exists($this, '_process'))
 		{
-			return $this->_process($this->_params);
+			return $this->_process($this->params);
 		}
 
 		throw new BadMethodCallException("Method not supported by this gateway.");
@@ -430,12 +427,12 @@ abstract class Merchant_driver
 		// try calling deprecated process_return() method instead
 		if (method_exists($this, 'process_return'))
 		{
-			return $this->process_return($this->_params);
+			return $this->process_return($this->params);
 		}
 
 		if (method_exists($this, '_process_return'))
 		{
-			return $this->_process_return($this->_params);
+			return $this->_process_return($this->params);
 		}
 
 		throw new BadMethodCallException("Method not supported by this gateway.");
@@ -448,12 +445,12 @@ abstract class Merchant_driver
 
 	public function param($name)
 	{
-		return isset($this->_params[$name]) ? $this->_params[$name] : FALSE;
+		return isset($this->params[$name]) ? $this->params[$name] : FALSE;
 	}
 
 	public function set_params($params)
 	{
-		$this->_params = array_merge($this->_params, $params);
+		$this->params = array_merge($this->params, $params);
 	}
 
 	public function require_params()
@@ -466,7 +463,7 @@ abstract class Merchant_driver
 
 		foreach ($args as $name)
 		{
-			if (empty($this->_params[$name]))
+			if (empty($this->params[$name]))
 			{
 				throw new Merchant_exception(str_replace('%s', $name, "The %s field is required."));
 			}
@@ -476,7 +473,7 @@ abstract class Merchant_driver
 	public function validate_card()
 	{
 		// skip validation if card_no is empty
-		if (empty($this->_params['card_no'])) return;
+		if (empty($this->params['card_no'])) return;
 
 		if ( ! $this->secure_request())
 		{
@@ -484,15 +481,15 @@ abstract class Merchant_driver
 		}
 
 		// strip any non-digits from card_no
-		$this->_params['card_no'] = preg_replace('/\D/', '', $this->_params['card_no']);
+		$this->params['card_no'] = preg_replace('/\D/', '', $this->params['card_no']);
 
-		if ($this->validate_luhn($this->_params['card_no']) == FALSE)
+		if ($this->validate_luhn($this->params['card_no']) == FALSE)
 		{
 			throw new Merchant_exception('Invalid card number.');
 		}
 
-		if ( ! empty($this->_params['exp_month']) AND ! empty($this->_params['exp_year']) AND
-			$this->validate_expiry($this->_params['exp_month'], $this->_params['exp_year']) == FALSE)
+		if ( ! empty($this->params['exp_month']) AND ! empty($this->params['exp_year']) AND
+			$this->validate_expiry($this->params['exp_month'], $this->params['exp_year']) == FALSE)
 		{
 			throw new Merchant_exception('Credit card has expired.');
 		}
@@ -573,22 +570,22 @@ abstract class Merchant_driver
 
 	protected function amount_dollars()
 	{
-		if (in_array($this->_params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
+		if (in_array($this->params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
 		{
-			return (int)$this->_params['currency'];
+			return (int)$this->params['currency'];
 		}
 
-		return sprintf('%01.2f', $this->_params['amount']);
+		return sprintf('%01.2f', $this->params['amount']);
 	}
 
 	protected function amount_cents()
 	{
-		if (in_array($this->_params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
+		if (in_array($this->params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
 		{
-			return (int)$this->_params['currency'];
+			return (int)$this->params['currency'];
 		}
 
-		return round($this->_params['amount'] * 100);
+		return round($this->params['amount'] * 100);
 	}
 }
 

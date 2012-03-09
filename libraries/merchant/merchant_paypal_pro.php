@@ -35,21 +35,17 @@ class Merchant_paypal_pro extends Merchant_driver
 	public $required_fields = array('reference', 'currency_code', 'amount',
 		'card_no', 'card_name', 'exp_month', 'exp_year', 'csc');
 
-	public $settings = array(
-		'username' => '',
-		'password' => '',
-		'signature' => '',
-		'test_mode' => FALSE
-	);
-
 	const PROCESS_URL = 'https://api-3t.paypal.com/nvp';
 	const PROCESS_URL_TEST = 'https://api-3t.sandbox.paypal.com/nvp';
 
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
+		return array(
+			'username' => '',
+			'password' => '',
+			'signature' => '',
+			'test_mode' => FALSE
+		);
 	}
 
 	public function process($params)
