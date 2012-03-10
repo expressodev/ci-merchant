@@ -246,38 +246,22 @@ class Merchant
 	}
 
 	/**
-	 * Curl helper function
-	 *
-	 * Let's keep our cURLs consistent
+	 * Support deprecated curl_helper() static method.
 	 */
 	public static function curl_helper($url, $post_data = NULL, $username = NULL, $password = NULL)
 	{
-		$ch = curl_init($url);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // don't check client certificate
+		// errors are now thrown as Merchant_exception()
+		$response = array('error' => NULL);
 
-		if ($post_data !== NULL)
+		if (is_null($post_data))
 		{
-			if (is_array($post_data))
-			{
-				$post_data = http_build_query($post_data);
-			}
-
-			curl_setopt($ch, CURLOPT_POST, TRUE);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+			$response['data'] = $this->_driver->get_request($url, $username, $password);
+		}
+		else
+		{
+			$response['data'] = $this->_driver->post_request($url, $post_data, $username, $password);
 		}
 
-		if ($username !== NULL)
-		{
-			curl_setopt($ch, CURLOPT_USERPWD, $username.':'.$password);
-		}
-
-		$response = array();
-		$response['data'] = curl_exec($ch);
-		$response['error'] = curl_error($ch);
-
-		curl_close($ch);
 		return $response;
 	}
 
@@ -596,6 +580,69 @@ abstract class Merchant_driver
 		}
 
 		return round($this->params['amount'] * 100);
+	}
+
+	/**
+	 * Make a standard HTTP GET request.
+	 * This method is only public to support the deprecated Merchant::curl_helper() method,
+	 * it should not be called from outside a driver class and will be set to protected in future.
+	 *
+	 * @param string $url The URL to request
+	 * @param string $username
+	 * @param string $password
+	 */
+	public function get_request($url, $username = NULL, $password = NULL)
+	{
+		$ch = curl_init($url);
+		return $this->_do_curl_request($ch, $username, $password);
+	}
+
+	/**
+	 * Make a standard HTTP POST request.
+	 * This method is only public to support the deprecated Merchant::curl_helper() method,
+	 * it should not be called from outside a driver class and will be set to protected in future.
+	 *
+	 * @param string $url The URL to request
+	 * @param mixed $data An optional string or array of form data which will be appended to the URL
+	 * @param string $username
+	 * @param string $password
+	 */
+	public function post_request($url, $data = NULL, $username = NULL, $password = NULL)
+	{
+		$ch = curl_init($url);
+
+		if (is_array($data))
+		{
+			$data = http_build_query($data);
+		}
+
+		curl_setopt($ch, CURLOPT_POST, TRUE);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+		return $this->_do_curl_request($ch, $username, $password);
+	}
+
+	private function _do_curl_request($ch, $username, $password)
+	{
+		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // don't check client certificate
+
+		if ($username !== NULL)
+		{
+			curl_setopt($ch, CURLOPT_USERPWD, $username.':'.$password);
+		}
+
+		$response = curl_exec($ch);
+		$error = curl_error($ch);
+
+		if ( ! empty($error))
+		{
+			throw new Merchant_exception($error);
+		}
+
+		curl_close($ch);
+		return $response;
 	}
 }
 
