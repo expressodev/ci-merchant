@@ -300,8 +300,21 @@ class Merchant
 abstract class Merchant_driver
 {
 	protected $CI;
+
+	/**
+	 * Settings related to the payment gateway.
+	 * Accessing this array directly is deprecated.
+	 *
+	 * @var array
+	 */
 	protected $settings = array();
-	protected $params = array();
+
+	/**
+	 * Parameters related to the current payment.
+	 *
+	 * @var array
+	 */
+	private $_params = array();
 
 	public function __construct()
 	{
@@ -411,12 +424,12 @@ abstract class Merchant_driver
 		// try calling deprecated process() method instead
 		if (method_exists($this, 'process'))
 		{
-			return $this->process($this->params);
+			return $this->process($this->_params);
 		}
 
 		if (method_exists($this, '_process'))
 		{
-			return $this->_process($this->params);
+			return $this->_process($this->_params);
 		}
 
 		throw new BadMethodCallException("Method not supported by this gateway.");
@@ -427,12 +440,12 @@ abstract class Merchant_driver
 		// try calling deprecated process_return() method instead
 		if (method_exists($this, 'process_return'))
 		{
-			return $this->process_return($this->params);
+			return $this->process_return($this->_params);
 		}
 
 		if (method_exists($this, '_process_return'))
 		{
-			return $this->_process_return($this->params);
+			return $this->_process_return($this->_params);
 		}
 
 		throw new BadMethodCallException("Method not supported by this gateway.");
@@ -445,12 +458,12 @@ abstract class Merchant_driver
 
 	public function param($name)
 	{
-		return isset($this->params[$name]) ? $this->params[$name] : FALSE;
+		return isset($this->_params[$name]) ? $this->_params[$name] : FALSE;
 	}
 
 	public function set_params($params)
 	{
-		$this->params = array_merge($this->params, $params);
+		$this->_params = array_merge($this->_params, $params);
 	}
 
 	public function require_params()
@@ -463,7 +476,7 @@ abstract class Merchant_driver
 
 		foreach ($args as $name)
 		{
-			if (empty($this->params[$name]))
+			if (empty($this->_params[$name]))
 			{
 				throw new Merchant_exception(str_replace('%s', $name, "The %s field is required."));
 			}
@@ -473,7 +486,7 @@ abstract class Merchant_driver
 	public function validate_card()
 	{
 		// skip validation if card_no is empty
-		if (empty($this->params['card_no'])) return;
+		if (empty($this->_params['card_no'])) return;
 
 		if ( ! $this->secure_request())
 		{
@@ -481,9 +494,9 @@ abstract class Merchant_driver
 		}
 
 		// strip any non-digits from card_no
-		$this->params['card_no'] = preg_replace('/\D/', '', $this->params['card_no']);
+		$this->_params['card_no'] = preg_replace('/\D/', '', $this->_params['card_no']);
 
-		if ($this->validate_luhn($this->params['card_no']) == FALSE)
+		if ($this->validate_luhn($this->_params['card_no']) == FALSE)
 		{
 			throw new Merchant_exception('Invalid card number.');
 		}
