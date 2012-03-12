@@ -28,6 +28,7 @@
  * Merchant DPS PxPost Class
  *
  * Payment processing using DPS PaymentExpress PxPost
+ * Documentation: http://www.paymentexpress.com/technical_resources/ecommerce_nonhosted/pxpost.html
  */
 
 class Merchant_dps_pxpost extends Merchant_driver
