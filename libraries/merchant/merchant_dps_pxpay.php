@@ -28,6 +28,7 @@
  * Merchant DPS PxPay Class
  *
  * Payment processing using DPS PaymentExpress PxPay (hosted)
+ * Documentation: http://www.paymentexpress.com/technical_resources/ecommerce_hosted/pxpay.html
  */
 
 class Merchant_dps_pxpay extends Merchant_driver
@@ -43,69 +44,81 @@ class Merchant_dps_pxpay extends Merchant_driver
 		);
 	}
 
+	public function authorize()
+	{
+		return $this->_begin_authorize_or_purchase('Auth');
+	}
+
+	public function authorize_return()
+	{
+		return $this->purchase_return();
+	}
+
 	public function purchase()
 	{
-		$this->require_params('email', 'reference', 'return_url', 'cancel_url');
+		return $this->_begin_authorize_or_purchase('Purchase');
+	}
 
-		// ask DPS to generate request url
-		$request = '<GenerateRequest>'.
-			'<PxPayUserId>'.$this->setting('user_id').'</PxPayUserId>'.
-			'<PxPayKey>'.$this->setting('key').'</PxPayKey>'.
-			'<AmountInput>'.sprintf('%01.2f', $this->param('amount')).'</AmountInput>'.
-			'<CurrencyInput>'.$this->param('currency').'</CurrencyInput>'.
-			'<EmailAddress>'.$this->param('email').'</EmailAddress>'.
-			'<MerchantReference>'.$this->param('reference').'</MerchantReference>'.
-			'<TxnType>Purchase</TxnType>'.
-			'<UrlSuccess>'.$this->param('return_url').'</UrlSuccess>'.
-			'<UrlFail>'.$this->param('cancel_url').'</UrlFail>'.
-			'<EnableAddBillCard>'.(int)$this->setting('enable_token_billing').'</EnableAddBillCard>'.
-			'</GenerateRequest>';
-
-		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
-
-		$xml = simplexml_load_string($response['data']);
-
-		// redirect to hosted payment page
-		if (empty($xml) OR ! isset($xml->attributes()->valid))
+	public function purchase_return()
+	{
+		$result = $this->CI->input->get_post('result');
+		if (empty($result))
 		{
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
-		elseif ($xml->attributes()->valid == 1)
+
+		// validate dps response
+		$request = new SimpleXMLElement('<ProcessResponse></ProcessResponse>');
+		$request->PxPayUserId = $this->setting('user_id');
+		$request->PxPayKey = $this->setting('key');
+		$request->Response = $result;
+
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
+
+		if ((string)$xml->Success == '1')
+		{
+			if ((string)$xml->TxnType == 'Auth')
+			{
+				return new Merchant_response(Merchant_response::AUTHORIZED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+			}
+			elseif ((string)$xml->TxnType == 'Purchase')
+			{
+				return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+			}
+		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+	}
+
+	private function _begin_authorize_or_purchase($method)
+	{
+		$this->require_params('return_url');
+
+		$request = new SimpleXMLElement('<GenerateRequest></GenerateRequest>');
+		$request->PxPayUserId = $this->setting('user_id');
+		$request->PxPayKey = $this->setting('key');
+		$request->TxnType = $method;
+		$request->TxnId = $this->param('transaction_id');
+		$request->AmountInput = $this->amount_dollars();
+		$request->CurrencyInput = $this->param('currency');
+		$request->MerchantReference = $this->param('description');
+		$request->UrlSuccess = $this->param('return_url');
+		$request->UrlFail = $this->param('return_url');
+		$request->EnableAddBillCard = (int)$this->setting('enable_token_billing');
+
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
+
+		// redirect to hosted payment page
+		if ((string)$xml['valid'] == '1')
 		{
 			$this->redirect((string)$xml->URI);
 		}
 		else
 		{
-			return new Merchant_response(Merchant_response::FAILED, (string)$xml->URI);
-		}
-	}
-
-	public function purchase_return()
-	{
-		if ($this->CI->input->get('result', TRUE) === FALSE) return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
-
-		// validate dps response
-		$request = '<ProcessResponse>'.
-			'<PxPayUserId>'.$this->setting('user_id').'</PxPayUserId>'.
-			'<PxPayKey>'.$this->setting('key').'</PxPayKey>'.
-			'<Response>'.$this->CI->input->get('result', TRUE).'</Response>'.
-			'</ProcessResponse>';
-
-		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
-
-		$xml = simplexml_load_string($response['data']);
-		if ( ! isset($xml->Success))
-		{
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
-		elseif ($xml->Success == '1')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef, (double)$xml->AmountSettlement);
-		}
-
-		return new Merchant_response(Merchant_response::FAILED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
 	}
 }
 
