@@ -28,6 +28,7 @@
  * Merchant 2Checkout Class
  *
  * Payment processing using 2Checkout
+ * Documentation: http://www.2checkout.com/documentation/Advanced_User_Guide.pdf
  */
 
 class Merchant_2checkout extends Merchant_driver
@@ -56,31 +57,23 @@ class Merchant_2checkout extends Merchant_driver
 			'fixed' => 'Y',
 			'skip_landing' => 1,
 			'x_receipt_link_url' => $this->param('return_url'),
+			'card_holder_name' => $this->param('card_name'),
+			'street_address' => $this->param('address'),
+			'street_address2' => $this->param('address2'),
+			'city' => $this->param('city'),
+			'state' => $this->param('region'),
+			'zip' => $this->param('postcode'),
+			'country' => $this->param('country'),
+			'phone' => $this->param('phone'),
+			'email' => $this->param('email'),
 		);
-
-		foreach (array(
-			'card_holder_name' => 'card_name',
-			'street_address' => 'address',
-			'street_address2' => 'address2',
-			'city' => 'city',
-			'state' => 'region',
-			'zip' => 'postcode',
-			'country' => 'country',
-			'phone' => 'phone',
-			'email' => 'email') as $key => $field)
-		{
-			if ($this->param($field) !== FALSE)
-			{
-				$data[$key] = $this->param($field);
-			}
-		}
 
 		if ($this->setting('test_mode'))
 		{
 			$data['demo'] = 'Y';
 		}
 
-		Merchant::redirect_post(self::PROCESS_URL, $data);
+		$this->redirect(self::PROCESS_URL.'?'.http_build_query($data));
 	}
 
 	public function purchase_return()
