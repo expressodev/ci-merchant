@@ -43,44 +43,94 @@ class Merchant_dps_pxpost extends Merchant_driver
 		);
 	}
 
+	public function authorize()
+	{
+		$request = $this->_build_authorize_or_purchase('Auth');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
+
+		if ($xml->Success == '1')
+		{
+			return new Merchant_response(Merchant_response::AUTHORIZED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+	}
+
+	public function capture()
+	{
+		$request = $this->_build_capture_or_refund('Complete');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
+
+		if ($xml->Success == '1')
+		{
+			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+	}
+
 	public function purchase()
+	{
+		$request = $this->_build_authorize_or_purchase('Purchase');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
+
+		if ($xml->Success == '1')
+		{
+			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+	}
+
+	public function refund()
+	{
+		$request = $this->_build_capture_or_refund('Refund');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
+
+		if ($xml->Success == '1')
+		{
+			return new Merchant_response(Merchant_response::REFUNDED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+	}
+
+	private function _build_authorize_or_purchase($method)
 	{
 		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'reference');
 
-		$date_expiry = $this->param('exp_month');
-		$date_expiry .= $this->param('exp_year') % 100;
+		$request = new SimpleXMLElement('<Txn></Txn>');
+		$request->PostUsername = $this->setting('username');
+		$request->PostPassword = $this->setting('password');
+		$request->TxnType = $method;
+		$request->CardHolderName = $this->param('card_name');
+		$request->CardNumber = $this->param('card_no');
+		$request->Amount = $this->amount_dollars();
+		$request->DateExpiry = $this->param('exp_month').($this->param('exp_year') % 100);
+		$request->Cvc2 = $this->param('csc');
+		$request->InputCurrency = $this->param('currency');
+		$request->MerchantReference = $this->param('reference');
+		$request->EnableAddBillCard = (int)$this->setting('enable_token_billing');
 
-		$request = '<Txn>'.
-				'<PostUsername>'.$this->setting('username').'</PostUsername>'.
-				'<PostPassword>'.$this->setting('password').'</PostPassword>'.
-				'<CardHolderName>'.htmlspecialchars($this->param('card_name')).'</CardHolderName>'.
-				'<CardNumber>'.$this->param('card_no').'</CardNumber>'.
-				'<Amount>'.sprintf('%01.2f', $this->param('amount')).'</Amount>'.
-				'<DateExpiry>'.$date_expiry.'</DateExpiry>'.
-				'<Cvc2>'.$this->param('csc').'</Cvc2>'.
-				'<InputCurrency>'.$this->param('currency').'</InputCurrency>'.
-				'<TxnType>Purchase</TxnType>'.
-				'<MerchantReference>'.$this->param('reference').'</MerchantReference>'.
-				'<EnableAddBillCard>'.(int)$this->setting('enable_token_billing').'</EnableAddBillCard>'.
-			'</Txn>';
+		return $request;
+	}
 
-		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
+	private function _build_capture_or_refund($method)
+	{
+		$this->require_params('transaction_id', 'amount');
 
-		$xml = simplexml_load_string($response['data']);
+		$request = new SimpleXMLElement('<Txn></Txn>');
+		$request->PostUsername = $this->setting('username');
+		$request->PostPassword = $this->setting('password');
+		$request->TxnType = $method;
+		$request->DpsTxnRef = $this->param('transaction_id');
+		$request->Amount = $this->amount_dollars();
 
-		if ( ! isset($xml->Success))
-		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
-		}
-		elseif ($xml->Success == '1')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->HelpText, (string)$xml->DpsTxnRef, (string)$xml->Transaction->Amount);
-		}
-		else
-		{
-			return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
-		}
+		return $request;
 	}
 }
 
