@@ -216,7 +216,7 @@ class Merchant
 		}
 		catch (Merchant_exception $e)
 		{
-			return new Merchant_response(Merchant_response::FAILED, $e->message);
+			return new Merchant_response(Merchant_response::FAILED, $e->getMessage());
 		}
 	}
 
@@ -367,6 +367,12 @@ abstract class Merchant_driver
 		return $method->getDeclaringClass()->name !== __CLASS__;
 	}
 
+	public function can_capture()
+	{
+		$method = new ReflectionMethod($this, 'capture');
+		return $method->getDeclaringClass()->name !== __CLASS__;
+	}
+
 	public function can_refund()
 	{
 		$method = new ReflectionMethod($this, 'refund');
@@ -482,8 +488,8 @@ abstract class Merchant_driver
 			throw new Merchant_exception('Invalid card number.');
 		}
 
-		if ( ! empty($this->params['exp_month']) AND ! empty($this->params['exp_year']) AND
-			$this->validate_expiry($this->params['exp_month'], $this->params['exp_year']) == FALSE)
+		if ($this->param('exp_month') AND $this->param('exp_year') AND
+			$this->validate_expiry($this->param('exp_month'), $this->param('exp_year')) == FALSE)
 		{
 			throw new Merchant_exception('Credit card has expired.');
 		}
@@ -564,22 +570,22 @@ abstract class Merchant_driver
 
 	protected function amount_dollars()
 	{
-		if (in_array($this->params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
+		if (in_array($this->param('currency'), Merchant::$CURRENCIES_WITHOUT_DECIMALS))
 		{
-			return (int)$this->params['currency'];
+			return round($this->param('amount'));
 		}
 
-		return sprintf('%01.2f', $this->params['amount']);
+		return sprintf('%01.2f', $this->param('amount'));
 	}
 
 	protected function amount_cents()
 	{
-		if (in_array($this->params['currency'], Merchant::$CURRENCIES_WITHOUT_DECIMALS))
+		if (in_array($this->param('currency'), Merchant::$CURRENCIES_WITHOUT_DECIMALS))
 		{
-			return (int)$this->params['currency'];
+			return round($this->param('amount'));
 		}
 
-		return round($this->params['amount'] * 100);
+		return round($this->param('amount') * 100);
 	}
 
 	/**
