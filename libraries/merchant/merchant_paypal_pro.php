@@ -68,23 +68,23 @@ class Merchant_paypal_pro extends Merchant_driver
 			'LASTNAME' => isset($card_name[1]) ? $card_name[1] : '',
 		);
 
-		if (isset($this->param('card_type')))
+		if ($this->param('card_type'))
 		{
 			$data['CREDITCARDTYPE'] = ucfirst($this->param('card_type'));
 			if ($data['CREDITCARDTYPE'] == 'Mastercard') $data['CREDITCARDTYPE'] = 'MasterCard';
 		}
 
-		if (isset($this->param('card_issue'))) $data['ISSUENUMBER'] = $this->param('card_issue');
-		if (isset($this->param('start_month')) AND isset($this->param('start_year')))
+		if ($this->param('card_issue')) $data['ISSUENUMBER'] = $this->param('card_issue');
+		if ($this->param('start_month') AND $this->param('start_year'))
 		{
 			$data['STARTDATE'] = $this->param('start_month').$this->param('start_year');
 		}
 
-		if (isset($this->param('address'))) $data['STREET'] = $this->param('address');
-		if (isset($this->param('city'))) $data['CITY'] = $this->param('city');
-		if (isset($this->param('region'))) $data['STATE'] = $this->param('region');
-		if (isset($this->param('postcode'))) $data['ZIP'] = $this->param('postcode');
-		if (isset($this->param('country'))) $data['COUNTRYCODE'] = strtoupper($this->param('country'));
+		if ($this->param('address')) $data['STREET'] = $this->param('address');
+		if ($this->param('city')) $data['CITY'] = $this->param('city');
+		if ($this->param('region')) $data['STATE'] = $this->param('region');
+		if ($this->param('postcode')) $data['ZIP'] = $this->param('postcode');
+		if ($this->param('country')) $data['COUNTRYCODE'] = strtoupper($this->param('country'));
 
 		// send request to paypal
 		$response = Merchant::curl_helper($this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);

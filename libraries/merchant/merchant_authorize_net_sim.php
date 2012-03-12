@@ -80,17 +80,14 @@ class Merchant_authorize_net_sim extends Merchant_driver
 		);
 
 		// set extra billing details if we have them
-		if (isset($this->param('card_name')))
+		if ($this->param('card_name'))
 		{
 			$names = explode(' ', $this->param('card_name'), 2);
 			$data['x_first_name'] = $names[0];
 			$data['x_last_name'] = isset($names[1]) ? $names[1] : '';
 		}
 
-		if (isset($this->param('address')) AND isset($this->param('address2')))
-		{
-			$this->param('address') = trim($this->param('address')." \n".$this->param('address2'));
-		}
+		$transaction->address = trim($this->param('address')." \n".$this->param('address2'));
 
 		foreach (array(
 			'x_company' => 'company',
@@ -102,9 +99,9 @@ class Merchant_authorize_net_sim extends Merchant_driver
 			'x_phone' => 'phone',
 			'x_email' => 'email') as $key => $field)
 		{
-			if (isset($params[$field]))
+			if ($this->param($field) !== FALSE)
 			{
-				$data[$key] = $params[$field];
+				$data[$key] = $this->param($field);
 			}
 		}
 

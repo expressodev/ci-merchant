@@ -61,21 +61,17 @@ class Merchant_authorize_net extends Merchant_driver
 		$transaction->setSandbox((bool)$this->setting('test_mode'));
 
 		// set extra billing details if we have them
-		if (isset($this->param('card_name')))
+		if ($this->param('card_name'))
 		{
 			$names = explode(' ', $this->param('card_name'), 2);
 			$transaction->first_name = $names[0];
 			$transaction->last_name = isset($names[1]) ? $names[1] : '';
 		}
 
-		if (isset($this->param('address')) AND isset($this->param('address2')))
-		{
-			$this->param('address') = trim($this->param('address')." \n".$this->param('address2'));
-		}
+		$transaction->address = trim($this->param('address')." \n".$this->param('address2'));
 
 		foreach (array(
 			'company' => 'company',
-			'address' => 'address',
 			'city' => 'city',
 			'state' => 'region',
 			'zip' => 'postcode',
@@ -83,9 +79,9 @@ class Merchant_authorize_net extends Merchant_driver
 			'phone' => 'phone',
 			'email' => 'email') as $key => $field)
 		{
-			if (isset($params[$field]))
+			if ($this->param($field) !== FALSE)
 			{
-				$transaction->$key = $params[$field];
+				$transaction->$key = $this->param($field);
 			}
 		}
 

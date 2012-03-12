@@ -69,9 +69,9 @@ class Merchant_2checkout extends Merchant_driver
 			'phone' => 'phone',
 			'email' => 'email') as $key => $field)
 		{
-			if (isset($params[$field]))
+			if ($this->param($field) !== FALSE)
 			{
-				$data[$key] = $params[$field];
+				$data[$key] = $this->param($field);
 			}
 		}
 

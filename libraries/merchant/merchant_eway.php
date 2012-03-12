@@ -48,7 +48,10 @@ class Merchant_eway extends Merchant_driver
 		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'reference');
 
 		// eway thows HTML formatted error if customerid is missing
-		if (empty($this->setting('customer_id'))) return new Merchant_response(Merchant_response::FAILED, 'Missing Customer ID!');
+		if ( ! $this->setting('customer_id'))
+		{
+			return new Merchant_response(Merchant_response::FAILED, 'Missing Customer ID!');
+		}
 
 		$request = '<ewaygateway>'.
 	      		'<ewayCustomerID>'.$this->setting('customer_id').'</ewayCustomerID>'.

@@ -58,17 +58,17 @@ class Merchant_worldpay extends Merchant_driver
 			'MC_callback' => $this->param('return_url'),
 		);
 
-		if ( ! empty($this->param('card_name'))) $data['name'] = $this->param('card_name');
-		if ( ! empty($this->param('address'))) $data['address1'] = $this->param('address');
-		if ( ! empty($this->param('address2'))) $data['address2'] = $this->param('address2');
-		if ( ! empty($this->param('city'))) $data['town'] = $this->param('city');
-		if ( ! empty($this->param('region'))) $data['region'] = $this->param('region');
-		if ( ! empty($this->param('postcode'))) $data['postcode'] = $this->param('postcode');
-		if ( ! empty($this->param('country'))) $data['country'] = $this->param('country');
-		if ( ! empty($this->param('phone'))) $data['tel'] = $this->param('phone');
-		if ( ! empty($this->param('email'))) $data['email'] = $this->param('email');
+		if ($this->param('card_name')) $data['name'] = $this->param('card_name');
+		if ($this->param('address')) $data['address1'] = $this->param('address');
+		if ($this->param('address2')) $data['address2'] = $this->param('address2');
+		if ($this->param('city')) $data['town'] = $this->param('city');
+		if ($this->param('region')) $data['region'] = $this->param('region');
+		if ($this->param('postcode')) $data['postcode'] = $this->param('postcode');
+		if ($this->param('country')) $data['country'] = $this->param('country');
+		if ($this->param('phone')) $data['tel'] = $this->param('phone');
+		if ($this->param('email')) $data['email'] = $this->param('email');
 
-		if ( ! empty($this->setting('secret')))
+		if ($this->setting('secret'))
 		{
 			$data['signatureFields'] = 'instId:amount:currency:cartId';
 			$signature_data = array($this->setting('secret'),

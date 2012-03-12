@@ -76,7 +76,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 
 		if ($data['CardType'] == 'MASTERCARD') $data['CardType'] = 'MC';
 
-		if (isset($this->param('card_name')))
+		if ($this->param('card_name'))
 		{
 			$names = explode(' ', $this->param('card_name'), 2);
 			$data['BillingFirstnames'] = $names[0];
@@ -85,7 +85,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 			$data['DeliverySurname'] = $data['BillingSurname'];
 		}
 
-		if (isset($this->param('email'))) $data['CustomerEMail'] = $this->param('email');
+		if ($this->param('email')) $data['CustomerEMail'] = $this->param('email');
 
 		foreach (array(
 				'Address1' => 'address',
@@ -96,24 +96,25 @@ class Merchant_sagepay_direct extends Merchant_driver
 				'Phone' => 'phone',
 			) as $field => $param)
 		{
-			if (isset($params[$param]))
+			if ($this->param($param))
 			{
-				$data["Billing$field"] = $params[$param];
-				$data["Delivery$field"] = $params[$param];
+				$data["Billing$field"] = $this->param($param);
+				$data["Delivery$field"] = $this->param($param);
 			}
 		}
 
-		if (isset($this->param('country')))
+		if ($this->param('country'))
 		{
 			$data['BillingCountry'] = $this->param('country') == 'uk' ? 'gb' : $this->param('country');
 			$data['DeliveryCountry'] = $data['BillingCountry'];
 		}
 
-		if ( ! empty($this->param('card_issue')))
+		if ($this->param('card_issue'))
 		{
 			$data['IssueNumber'] = $this->param('card_issue');
 		}
-		if ( ! empty($this->param('start_month')) AND ! empty($this->param('start_year')))
+
+		if ($this->param('start_month') AND $this->param('start_year'))
 		{
 			$data['StartDate'] = $this->param('start_month').($this->param('start_year') % 100);
 		}
@@ -134,7 +135,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 		$response = Merchant::curl_helper($process_url, $data);
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
-		return $this->_process_response($response['data'], $params);
+		return $this->_process_response($response['data']);
 	}
 
 	/**
@@ -168,10 +169,10 @@ class Merchant_sagepay_direct extends Merchant_driver
 		$response = Merchant::curl_helper($auth_url, $data);
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
-		return $this->_process_response($response['data'], $params);
+		return $this->_process_response($response['data']);
 	}
 
-	protected function _process_response($response, $params)
+	protected function _process_response($response)
 	{
 		$response = $this->_decode_response($response);
 
