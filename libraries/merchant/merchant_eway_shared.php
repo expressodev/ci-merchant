@@ -53,8 +53,6 @@ class Merchant_eway_shared extends Merchant_driver
 	{
 		$this->require_params('reference', 'return_url', 'cancel_url');
 
-		$this->CI->load->helper('url');
-
 		$data = array(
 			'CustomerID' => $this->setting('customer_id'),
 			'UserName' => $this->setting('username'),
@@ -84,7 +82,7 @@ class Merchant_eway_shared extends Merchant_driver
 		}
 		elseif ($xml->Result == 'True')
 		{
-			redirect((string)$xml->URI);
+			$this->redirect((string)$xml->URI);
 		}
 		else
 		{

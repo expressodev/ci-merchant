@@ -47,8 +47,6 @@ class Merchant_dps_pxpay extends Merchant_driver
 	{
 		$this->require_params('email', 'reference', 'return_url', 'cancel_url');
 
-		$this->CI->load->helper('url');
-
 		// ask DPS to generate request url
 		$request = '<GenerateRequest>'.
 			'<PxPayUserId>'.$this->setting('user_id').'</PxPayUserId>'.
@@ -75,7 +73,7 @@ class Merchant_dps_pxpay extends Merchant_driver
 		}
 		elseif ($xml->attributes()->valid == 1)
 		{
-			redirect((string)$xml->URI);
+			$this->redirect((string)$xml->URI);
 		}
 		else
 		{

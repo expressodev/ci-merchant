@@ -650,6 +650,15 @@ abstract class Merchant_driver
 		curl_close($ch);
 		return $response;
 	}
+
+	/**
+	 * Redirect the user to a given URL
+	 */
+	protected function redirect($url)
+	{
+		$this->CI->load->helper('url');
+		redirect($url);
+	}
 }
 
 class Merchant_exception extends Exception {}
