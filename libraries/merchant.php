@@ -247,6 +247,16 @@ class Merchant
 				$params['last_name'] = isset($names[1]) ? $names[1] : '';
 			}
 		}
+
+		// support deprecated address parameter
+		if (isset($params['address']))
+		{
+			$params['address1'] = $params['address'];
+		}
+		elseif (isset($params['address1']))
+		{
+			$params['address'] = $params['address1'];
+		}
 	}
 
 	private function _normalize_currency_params(&$params)
@@ -254,11 +264,13 @@ class Merchant
 		// support deprecated currency_code parameter
 		if (isset($params['currency_code']))
 		{
-			$params['currency'] =& $params['currency_code'];
+			$params['currency'] = $params['currency_code'];
 		}
-		elseif (isset($params['currency']))
+		if (isset($params['currency']))
 		{
-			$params['currency_code'] =& $params['currency'];
+			// currency should always be uppercase
+			$params['currency'] = strtoupper($params['currency']);
+			$params['currency_code'] = $params['currency'];
 		}
 	}
 
