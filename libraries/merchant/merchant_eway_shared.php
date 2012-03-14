@@ -52,26 +52,8 @@ class Merchant_eway_shared extends Merchant_driver
 
 	public function purchase()
 	{
-		$this->require_params('return_url', 'cancel_url');
-
-		$data = array(
-			'CustomerID' => $this->setting('customer_id'),
-			'UserName' => $this->setting('username'),
-			'Amount' => sprintf('%01.2f', $this->param('amount')),
-			'Currency' => $this->param('currency'),
-			'PageTitle' => $this->setting('page_title'),
-			'PageDescription' => $this->setting('page_description'),
-			'PageFooter' => $this->setting('page_footer'),
-			'PageBanner' => $this->setting('page_banner'),
-			'Language' => 'EN',
-			'CompanyName' => $this->setting('company_name'),
-			'CompanyLogo' => $this->setting('company_logo'),
-			'CancelUrl' => $this->param('cancel_url'),
-			'ReturnUrl' => $this->param('return_url'),
-			'MerchantReference' => $this->param('description'),
-		);
-
-		$response = $this->get_request(self::PROCESS_URL.'?'.http_build_query($data));
+		$request = $this->_build_purchase();
+		$response = $this->get_request(self::PROCESS_URL.'?'.http_build_query($request));
 		$xml = simplexml_load_string($response);
 
 		if ((string)$xml->Result == 'True')
@@ -93,7 +75,7 @@ class Merchant_eway_shared extends Merchant_driver
 		$data = array(
 			'CustomerID' => $this->setting('customer_id'),
 			'UserName' => $this->setting('username'),
-			'AccessPaymentCode' => $_REQUEST['AccessPaymentCode'],
+			'AccessPaymentCode' => $payment_code,
 		);
 
 		$response = $this->get_request(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
@@ -107,6 +89,38 @@ class Merchant_eway_shared extends Merchant_driver
 		return new Merchant_response(Merchant_response::FAILED,
 			(string)$xml->TrxnResponseMessage,
 			(string)$xml->TrxnNumber);
+	}
+
+	protected function _build_purchase()
+	{
+		$this->require_params('return_url', 'cancel_url');
+
+		$request = array();
+		$request['CustomerID'] = $this->setting('customer_id');
+		$request['UserName'] = $this->setting('username');
+		$request['Amount'] = $this->amount_dollars();
+		$request['Currency'] = $this->param('currency');
+		$request['PageTitle'] = $this->setting('page_title');
+		$request['PageDescription'] = $this->setting('page_description');
+		$request['PageFooter'] = $this->setting('page_footer');
+		$request['PageBanner'] = $this->setting('page_banner');
+		$request['Language'] = 'EN';
+		$request['CompanyName'] = $this->setting('company_name');
+		$request['CompanyLogo'] = $this->setting('company_logo');
+		$request['CancelUrl'] = $this->param('cancel_url');
+		$request['ReturnUrl'] = $this->param('return_url');
+		$request['MerchantReference'] = $this->param('description');
+		$request['CustomerFirstName'] = $this->param('first_name');
+		$request['CustomerLastName'] = $this->param('last_name');
+		$request['CustomerAddress'] = trim($this->param('address1')." \n".$this->param('address2'));
+		$request['CustomerCity'] = $this->param('city');
+		$request['CustomerState'] = $this->param('region');
+		$request['CustomerPostCode'] = $this->param('postcode');
+		$request['CustomerCountry'] = $this->param('country');
+		$request['CustomerEmail'] = $this->param('email');
+		$request['CustomerPhone'] = $this->param('phone');
+
+		return $request;
 	}
 }
 
