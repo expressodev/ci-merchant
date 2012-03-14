@@ -43,61 +43,103 @@ class Merchant_paypal extends Merchant_driver
 		);
 	}
 
+	public function authorize()
+	{
+		$request = $this->_build_authorize_or_purchase('authorization');
+		$this->redirect($this->_process_url().'?'.http_build_query($request));
+	}
+
+	public function authorize_return()
+	{
+		return $this->purchase_return();
+	}
+
 	public function purchase()
 	{
-		$this->require_params('reference', 'return_url');
-
-		// ask paypal to generate request url
-		$data = array(
-			'cmd' => '_xclick',
-			'paymentaction' => 'sale',
-			'business' => $this->setting('paypal_email'),
-			'amount' => sprintf('%01.2f', $this->param('amount')),
-			'currency_code' => $this->param('currency'),
-			'item_name' => $this->param('reference'),
-			'return'=> $this->param('return_url'),
-			'cancel_return' => $this->param('cancel_url'),
-			'notify_url' => $this->param('return_url'),
-			'rm' => '2',
-			'no_shipping' => 1,
-		);
-
-		$post_url = $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
-		Merchant::redirect_post($post_url, $data);
+		$request = $this->_build_authorize_or_purchase('sale');
+		$this->redirect($this->_process_url().'?'.http_build_query($request));
 	}
 
 	public function purchase_return()
 	{
-		$txn_id = $this->CI->input->post('txn_id');
-		if (empty($txn_id))
-		{
-			return new Merchant_response(Merchant_response::FAILED, 'payment_cancelled');
-		}
-
-		// verify payee
-		if ($this->CI->input->post('receiver_email') != $this->setting('paypal_email'))
+		if (empty($_POST['txn_id']))
 		{
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
-		// verify response
-		$post_string = 'cmd=_notify-validate&'.http_build_query($_POST);
-		$response = Merchant::curl_helper($this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL, $post_string);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
-
-		if ($response['data'] != 'VERIFIED')
+		if ( ! $this->_validate_return($_POST))
 		{
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
-		$payment_status = $this->CI->input->post('payment_status');
+		return new Merchant_paypal_response($_POST);
+	}
+
+	protected function _build_authorize_or_purchase($method)
+	{
+		$this->require_params('description', 'return_url');
+
+		$request = array();
+		$request['cmd'] = '_xclick';
+		$request['paymentaction'] = $method;
+		$request['business'] = $this->setting('paypal_email');
+		$request['amount'] = $this->amount_dollars();
+		$request['currency_code'] = $this->param('currency');
+		$request['item_name'] = $this->param('description');
+		$request['invoice'] = $this->param('order_id');
+		$request['return'] = $this->param('return_url');
+		$request['cancel_return'] = $this->param('cancel_url');
+		$request['notify_url'] = $this->param('return_url');
+		$request['rm'] = '2';
+		$request['no_shipping'] = '1';
+
+		return $request;
+	}
+
+	protected function _validate_return($data)
+	{
+		// to make sure amount and email address have not been tampered with,
+		// we replace the parameters with their expected values
+		$data['business'] = $this->setting('paypal_email');
+		$data['receiver_email'] = $this->setting('paypal_email');
+		$data['mc_gross'] = $this->amount_dollars();
+		$data['mc_currency'] = $this->param('currency');
+		$data['cmd'] = '_notify-validate';
+
+		$verify_request = $this->post_request($this->_process_url(), $data);
+		return $verify_request == 'VERIFIED';
+	}
+
+	protected function _process_url()
+	{
+		return $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+	}
+}
+
+class Merchant_paypal_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response)
+	{
+		$this->_response = $response;
+
+		$this->_status = self::FAILED;
+		$this->_reference = $this->_response['txn_id'];
+
+		$payment_status = $this->_response['payment_status'];
 		if ($payment_status == 'Completed')
 		{
-			$amount = (float)$this->CI->input->post('mc_gross');
-			return new Merchant_response(Merchant_response::COMPLETED, NULL, $txn_id, $amount);
+			$this->_status = self::COMPLETED;
 		}
-
-		return new Merchant_response(Merchant_response::FAILED, $payment_status);
+		elseif ($payment_status == 'Refunded' OR $payment_status == 'Voided')
+		{
+			$this->_status = self::REFUNDED;
+		}
+		elseif ($payment_status == 'Pending' AND $this->_response['pending_reason'] == 'authorization')
+		{
+			$this->_status = self::AUTHORIZED;
+		}
 	}
 }
 
