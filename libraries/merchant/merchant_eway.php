@@ -28,6 +28,7 @@
  * Merchant eWAY Class
  *
  * Payment processing using eWAY
+ * Documentation: http://www.eway.com.au/Developer/eway-api/hosted-payment-solution.aspx
  */
 
 class Merchant_eway extends Merchant_driver
@@ -45,51 +46,67 @@ class Merchant_eway extends Merchant_driver
 
 	public function purchase()
 	{
-		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'reference');
+		$request = $this->_build_purchase();
+		$response = $this->post_request($this->_process_url(), $request->asXML());
+		return new Merchant_eway_response($response);
+	}
 
+	protected function _build_purchase()
+	{
 		// eway thows HTML formatted error if customerid is missing
 		if ( ! $this->setting('customer_id'))
 		{
 			return new Merchant_response(Merchant_response::FAILED, 'Missing Customer ID!');
 		}
 
-		$request = '<ewaygateway>'.
-	      		'<ewayCustomerID>'.$this->setting('customer_id').'</ewayCustomerID>'.
-	      		'<ewayTotalAmount>'.round($this->param('amount') * 100).'</ewayTotalAmount>'.
-	      		'<ewayCustomerInvoiceDescription></ewayCustomerInvoiceDescription>'.
-	      		'<ewayCustomerInvoiceRef>'.$this->param('reference').'</ewayCustomerInvoiceRef>'.
-	      		'<ewayCardHoldersName>'.$this->param('card_name').'</ewayCardHoldersName>'.
-	      		'<ewayCardNumber>'.$this->param('card_no').'</ewayCardNumber>'.
-	      		'<ewayCardExpiryMonth>'.$this->param('exp_month').'</ewayCardExpiryMonth>'.
-	      		'<ewayCardExpiryYear>'.($this->param('exp_year') % 100).'</ewayCardExpiryYear>'.
-	      		'<ewayCVN>'.$this->param('csc').'</ewayCVN>'.
-	      		'<ewayTrxnNumber></ewayTrxnNumber>'.
-				'<ewayCustomerFirstName></ewayCustomerFirstName>'.
-				'<ewayCustomerLastName></ewayCustomerLastName>'.
-				'<ewayCustomerEmail></ewayCustomerEmail>'.
-				'<ewayCustomerAddress></ewayCustomerAddress>'.
-				'<ewayCustomerPostcode></ewayCustomerPostcode>'.
-				'<ewayOption1></ewayOption1>'.
-				'<ewayOption2></ewayOption2>'.
-				'<ewayOption3></ewayOption3>'.
-			'</ewaygateway>';
+		$this->require_params('card_no', 'name', 'exp_month', 'exp_year', 'csc');
 
-		$response = Merchant::curl_helper($this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
+		$request = new SimpleXMLElement('<ewaygateway></ewaygateway>');
+		$request->ewayCustomerID = $this->setting('customer_id');
+		$request->ewayCustomerInvoiceDescription = $this->param('description');
+		$request->ewayCustomerInvoiceRef = $this->param('order_id');
+		$request->ewayTotalAmount = $this->amount_cents();
+		$request->ewayCardHoldersName = $this->param('name');
+		$request->ewayCardNumber = $this->param('card_no');
+		$request->ewayCardExpiryMonth = $this->param('exp_month');
+		$request->ewayCardExpiryYear = $this->param('exp_year') % 100;
+		$request->ewayCVN = $this->param('csc');
+		$request->ewayCustomerFirstName = $this->param('first_name');
+		$request->ewayCustomerLastName = $this->param('last_name');
+		$request->ewayCustomerEmail = $this->param('email');
+		$request->ewayCustomerAddress = trim($this->param('address1')." \n".$this->param('address2'));
+		$request->ewayCustomerPostcode = $this->param('postcode');
 
-		$xml = simplexml_load_string($response['data']);
+		// these need to be submitted, otherwise we get errors
+		$request->ewayTrxnNumber = '';
+		$request->ewayOption1 = '';
+		$request->ewayOption2 = '';
+		$request->ewayOption3 = '';
 
-		if ( ! isset($xml->ewayTrxnStatus))
+		return $request;
+	}
+
+	protected function _process_url()
+	{
+		return $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+	}
+}
+
+class Merchant_eway_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response)
+	{
+		$this->_response = simplexml_load_string($response);
+
+		$this->_status = self::FAILED;
+		$this->_message = (string)$this->_response->ewayTrxnError;
+		$this->_reference = (string)$this->_response->ewayTrxnNumber;
+
+		if ((string)$this->_response->ewayTrxnStatus == 'True')
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
-		}
-		elseif ($xml->ewayTrxnStatus == 'True')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->ewayTrxnError, (string)$xml->ewayTrxnNumber, ((double)$xml->ewayReturnAmount) / 100);
-		}
-		else
-		{
-			return new Merchant_response(Merchant_response::FAILED, (string)$xml->ewayTrxnError);
+			$this->_status = self::COMPLETED;
 		}
 	}
 }
