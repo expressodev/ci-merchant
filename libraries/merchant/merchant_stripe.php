@@ -32,7 +32,7 @@
 
 class Merchant_stripe extends Merchant_driver
 {
-	const API_ENDPOINT = 'https://api.stripe.com';
+	const PROCESS_URL = 'https://api.stripe.com';
 
 	public function default_settings()
 	{
@@ -52,7 +52,7 @@ class Merchant_stripe extends Merchant_driver
 			'description' => $this->param('reference'),
 		);
 
-		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->setting('api_key'));
+		$response = Merchant::curl_helper(self::PROCESS_URL.'/v1/charges', $request, $this->setting('api_key'));
 		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
 
 		$data = json_decode($response['data']);

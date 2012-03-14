@@ -33,8 +33,8 @@
 
 class Merchant_gocardless extends Merchant_driver
 {
-	const API_ENDPOINT = 'https://gocardless.com';
-	const API_ENDPOINT_TEST = 'https://sandbox.gocardless.com';
+	const PROCESS_URL = 'https://gocardless.com';
+	const PROCESS_URL_TEST = 'https://sandbox.gocardless.com';
 
 	public function default_settings()
 	{
@@ -74,7 +74,7 @@ class Merchant_gocardless extends Merchant_driver
 
 		$data['signature'] = $this->_generate_signature($data);
 
-		$url = $this->_api_endpoint().'/connect/bills/new?'.$this->_generate_query_string($data);
+		$url = $this->_process_url().'/connect/bills/new?'.$this->_generate_query_string($data);
 		$this->redirect($url);
 	}
 
@@ -92,7 +92,7 @@ class Merchant_gocardless extends Merchant_driver
 		}
 
 		unset($data['resource_uri']);
-		$url = $this->_api_endpoint().'/api/v1/confirm';
+		$url = $this->_process_url().'/api/v1/confirm';
 		$response = $this->post_request($url, $data, $this->setting('app_id'), $this->setting('app_secret'));
 		$response = json_decode($response);
 
@@ -105,9 +105,9 @@ class Merchant_gocardless extends Merchant_driver
 		return new Merchant_response(Merchant_response::FAILED, $error_message);
 	}
 
-	private function _api_endpoint()
+	private function _process_url()
 	{
-		return $this->setting('test_mode') ? self::API_ENDPOINT_TEST : self::API_ENDPOINT;
+		return $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
 	}
 
 	/**
