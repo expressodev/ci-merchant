@@ -230,6 +230,23 @@ class Merchant
 
 		// normalize card_type to lowercase
 		if (isset($params['card_type'])) $params['card_type'] = strtolower($params['card_type']);
+
+		// support deprecated card_name parameter
+		if (isset($params['card_name']))
+		{
+			$params['name'] = $params['card_name'];
+		}
+		if (isset($params['name']))
+		{
+			$params['card_name'] = $params['name'];
+			// split first/last names
+			if (empty($params['first_name']) AND empty($params['last_name']))
+			{
+				$names = explode(' ', (string)$params['name'], 2);
+				$params['first_name'] = $names[0];
+				$params['last_name'] = isset($names[1]) ? $names[1] : '';
+			}
+		}
 	}
 
 	private function _normalize_currency_params(&$params)
