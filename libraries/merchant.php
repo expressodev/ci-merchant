@@ -275,7 +275,8 @@ class Merchant
 	}
 
 	/**
-	 * Support deprecated curl_helper() static method.
+	 * Deprecated. Please use Merchant_driver::get_request() or
+	 * Merchant_driver::post_request() instead.
 	 */
 	public static function curl_helper($url, $post_data = NULL, $username = NULL, $password = NULL)
 	{
@@ -284,45 +285,22 @@ class Merchant
 
 		if (is_null($post_data))
 		{
-			$response['data'] = $this->_driver->get_request($url, $username, $password);
+			$response['data'] = get_instance()->merchant->get_request($url, $username, $password);
 		}
 		else
 		{
-			$response['data'] = $this->_driver->post_request($url, $post_data, $username, $password);
+			$response['data'] = get_instance()->merchant->post_request($url, $post_data, $username, $password);
 		}
 
 		return $response;
 	}
 
 	/**
-	 * Redirect Post function
-	 *
-	 * Automatically redirect the user to payment pages which require POST data
+	 * Deprecated. Please use Merchant_driver::post_redirect() instead.
 	 */
-	public static function redirect_post($post_url, $data, $message = 'Please wait while we redirect you to the payment page...')
+	public static function redirect_post($url, $data, $message = NULL)
 	{
-		?>
-<!DOCTYPE html>
-<html>
-<head><title>Redirecting...</title></head>
-<body onload="document.forms[0].submit();">
-	<p><?php echo htmlspecialchars($message); ?></p>
-	<form name="payment" action="<?php echo htmlspecialchars($post_url); ?>" method="post">
-		<p>
-			<?php if (is_array($data)): ?>
-				<?php foreach ($data as $key => $value): ?>
-					<input type="hidden" name="<?php echo $key; ?>" value="<?php echo htmlspecialchars($value); ?>" />
-				<?php endforeach ?>
-			<?php else: ?>
-				<?php echo $data; ?>
-			<?php endif; ?>
-			<input type="submit" value="Continue" />
-		</p>
-	</form>
-</body>
-</html>
-	<?php
-		exit();
+		get_instance()->merchant->post_redirect($url, $data, $message);
 	}
 }
 
@@ -633,7 +611,7 @@ abstract class Merchant_driver
 	/**
 	 * Make a standard HTTP GET request.
 	 * This method is only public to support the deprecated Merchant::curl_helper() method,
-	 * it should not be called from outside a driver class and will be set to protected in future.
+	 * and will be marked as protected in a future version.
 	 *
 	 * @param string $url The URL to request
 	 * @param string $username
@@ -649,7 +627,7 @@ abstract class Merchant_driver
 	/**
 	 * Make a standard HTTP POST request.
 	 * This method is only public to support the deprecated Merchant::curl_helper() method,
-	 * it should not be called from outside a driver class and will be set to protected in future.
+	 * and will be marked as protected in a future version.
 	 *
 	 * @param string $url The URL to request
 	 * @param mixed $data An optional string or array of form data which will be appended to the URL
@@ -701,12 +679,49 @@ abstract class Merchant_driver
 	}
 
 	/**
-	 * Redirect the user to a given URL
+	 * Redirect the user's browser to a URL.
+	 *
+	 * @param string $url
 	 */
 	protected function redirect($url)
 	{
 		$this->CI->load->helper('url');
 		redirect($url);
+	}
+
+	/**
+	 * Redirect the user's browser to a URL using a POST request.
+	 * This method is only public to support the deprecated Merchant::redirect_post() method,
+	 * and will be marked as protected in a future version.
+	 *
+	 * @param string $url
+	 * @param array $data
+	 * @param string $message
+	 */
+	public function post_redirect($url, $data, $message = NULL)
+	{
+		if (empty($message))
+		{
+			$message = 'Please wait while we redirect you to the payment page...';
+		}
+
+		?><!DOCTYPE html>
+<html>
+<head><title>Redirecting...</title></head>
+<body onload="document.forms[0].submit();">
+	<form name="payment" action="<?php echo htmlspecialchars($url); ?>" method="post">
+		<p><?php echo htmlspecialchars($message); ?></p>
+		<p>
+			<?php foreach ($data as $key => $value): ?>
+				<input type="hidden" name="<?php echo htmlspecialchars($key); ?>" value="<?php echo htmlspecialchars($value); ?>" />
+			<?php endforeach ?>
+			<input type="submit" value="Continue" />
+		</p>
+	</form>
+</body>
+</html>
+<?php
+		exit();
 	}
 }
 
