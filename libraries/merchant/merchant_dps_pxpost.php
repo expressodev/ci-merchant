@@ -48,73 +48,45 @@ class Merchant_dps_pxpost extends Merchant_driver
 	{
 		$request = $this->_build_authorize_or_purchase('Auth');
 		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
-		$xml = simplexml_load_string($response);
-
-		if ($xml->Success == '1')
-		{
-			return new Merchant_response(Merchant_response::AUTHORIZED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
-		}
-
-		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		return new Merchant_dps_pxpost_response($response);
 	}
 
 	public function capture()
 	{
 		$request = $this->_build_capture_or_refund('Complete');
 		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
-		$xml = simplexml_load_string($response);
-
-		if ($xml->Success == '1')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
-		}
-
-		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		return new Merchant_dps_pxpost_response($response);
 	}
 
 	public function purchase()
 	{
 		$request = $this->_build_authorize_or_purchase('Purchase');
 		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
-		$xml = simplexml_load_string($response);
-
-		if ($xml->Success == '1')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
-		}
-
-		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		return new Merchant_dps_pxpost_response($response);
 	}
 
 	public function refund()
 	{
 		$request = $this->_build_capture_or_refund('Refund');
 		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
-		$xml = simplexml_load_string($response);
-
-		if ($xml->Success == '1')
-		{
-			return new Merchant_response(Merchant_response::REFUNDED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
-		}
-
-		return new Merchant_response(Merchant_response::FAILED, (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+		return new Merchant_dps_pxpost_response($response);
 	}
 
 	private function _build_authorize_or_purchase($method)
 	{
-		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'reference');
+		$this->require_params('card_no', 'name', 'exp_month', 'exp_year', 'csc');
 
 		$request = new SimpleXMLElement('<Txn></Txn>');
 		$request->PostUsername = $this->setting('username');
 		$request->PostPassword = $this->setting('password');
 		$request->TxnType = $method;
-		$request->CardHolderName = $this->param('card_name');
 		$request->CardNumber = $this->param('card_no');
+		$request->CardHolderName = $this->param('name');
 		$request->Amount = $this->amount_dollars();
 		$request->DateExpiry = $this->param('exp_month').($this->param('exp_year') % 100);
 		$request->Cvc2 = $this->param('csc');
 		$request->InputCurrency = $this->param('currency');
-		$request->MerchantReference = $this->param('reference');
+		$request->MerchantReference = $this->param('description');
 		$request->EnableAddBillCard = (int)$this->setting('enable_token_billing');
 
 		return $request;
@@ -122,16 +94,49 @@ class Merchant_dps_pxpost extends Merchant_driver
 
 	private function _build_capture_or_refund($method)
 	{
-		$this->require_params('transaction_id', 'amount');
+		$this->require_params('reference', 'amount');
 
 		$request = new SimpleXMLElement('<Txn></Txn>');
 		$request->PostUsername = $this->setting('username');
 		$request->PostPassword = $this->setting('password');
 		$request->TxnType = $method;
-		$request->DpsTxnRef = $this->param('transaction_id');
+		$request->DpsTxnRef = $this->param('reference');
 		$request->Amount = $this->amount_dollars();
 
 		return $request;
+	}
+}
+
+class Merchant_dps_pxpost_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response)
+	{
+		$this->_response = simplexml_load_string($response);
+
+		$this->_status = self::FAILED;
+		$this->_message = (string)$this->_response->HelpText;
+		$this->_reference = (string)$this->_response->DpsTxnRef;
+
+		if ((string)$this->_response->Success == '1')
+		{
+			switch ((string)$this->_response->Transaction->TxnType)
+			{
+				case 'Auth':
+					$this->_status = self::AUTHORIZED;
+					break;
+				case 'Complete':
+					$this->_status = self::COMPLETED;
+					break;
+				case 'Purchase':
+					$this->_status = self::COMPLETED;
+					break;
+				case 'Refund':
+					$this->_status = self::REFUNDED;
+					break;
+			}
+		}
 	}
 }
 

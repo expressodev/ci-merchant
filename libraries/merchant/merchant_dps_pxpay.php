@@ -99,7 +99,6 @@ class Merchant_dps_pxpay extends Merchant_driver
 		$request->PxPayUserId = $this->setting('user_id');
 		$request->PxPayKey = $this->setting('key');
 		$request->TxnType = $method;
-		$request->TxnId = $this->param('transaction_id');
 		$request->AmountInput = $this->amount_dollars();
 		$request->CurrencyInput = $this->param('currency');
 		$request->MerchantReference = $this->param('description');
