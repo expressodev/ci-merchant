@@ -28,6 +28,7 @@
  * Merchant eWAY External Class
  *
  * Payment processing using eWAY's Secure Hosted Page
+ * Documentation: http://www.eway.com.au/_files/documentation/HostedPaymentPageDoc.pdf
  */
 
 class Merchant_eway_shared extends Merchant_driver
@@ -51,7 +52,7 @@ class Merchant_eway_shared extends Merchant_driver
 
 	public function purchase()
 	{
-		$this->require_params('reference', 'return_url', 'cancel_url');
+		$this->require_params('return_url', 'cancel_url');
 
 		$data = array(
 			'CustomerID' => $this->setting('customer_id'),
@@ -67,32 +68,24 @@ class Merchant_eway_shared extends Merchant_driver
 			'CompanyLogo' => $this->setting('company_logo'),
 			'CancelUrl' => $this->param('cancel_url'),
 			'ReturnUrl' => $this->param('return_url'),
-			'MerchantReference' => $this->param('reference'),
+			'MerchantReference' => $this->param('description'),
 		);
 
-		$response = Merchant::curl_helper(self::PROCESS_URL.'?'.http_build_query($data));
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
+		$response = $this->get_request(self::PROCESS_URL.'?'.http_build_query($data));
+		$xml = simplexml_load_string($response);
 
-		$xml = simplexml_load_string($response['data']);
-
-		// redirect to payment page
-		if (empty($xml) OR ! isset($xml->Result))
-		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
-		}
-		elseif ($xml->Result == 'True')
+		if ((string)$xml->Result == 'True')
 		{
 			$this->redirect((string)$xml->URI);
 		}
-		else
-		{
-			return new Merchant_response(Merchant_response::FAILED, (string)$xml->Error);
-		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->Error);
 	}
 
 	public function purchase_return()
 	{
-		if (($payment_code = $this->CI->input->get_post('AccessPaymentCode')) === FALSE)
+		$payment_code = $this->CI->input->get_post('AccessPaymentCode');
+		if (empty($payment_code))
 		{
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
@@ -103,23 +96,17 @@ class Merchant_eway_shared extends Merchant_driver
 			'AccessPaymentCode' => $_REQUEST['AccessPaymentCode'],
 		);
 
-		$response = Merchant::curl_helper(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
+		$response = $this->get_request(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
+		$xml = simplexml_load_string($response);
 
-		$xml = simplexml_load_string($response['data']);
+		if ((string)$xml->TrxnStatus == 'True')
+		{
+			return new Merchant_response(Merchant_response::COMPLETED, NULL, (string)$xml->TrxnNumber);
+		}
 
-		if ( ! isset($xml->TrxnStatus))
-		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
-		}
-		elseif ($xml->TrxnStatus == 'True')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, '', (string)$xml->TrxnNumber, (double)$xml->ReturnAmount);
-		}
-		else
-		{
-			return new Merchant_response(Merchant_response::FAILED, (string)$xml->TrxnResponseMessage, (string)$xml->TrxnNumber);
-		}
+		return new Merchant_response(Merchant_response::FAILED,
+			(string)$xml->TrxnResponseMessage,
+			(string)$xml->TrxnNumber);
 	}
 }
 
