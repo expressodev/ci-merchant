@@ -41,7 +41,7 @@ class Merchant_dummy extends Merchant_driver
 
 	public function purchase()
 	{
-		$this->require_params('card_no', 'card_name', 'exp_month', 'exp_year', 'csc');
+		$this->require_params('card_no', 'name', 'exp_month', 'exp_year', 'csc');
 
 		if ($this->param('card_no') == self::DUMMY_CARD)
 		{
