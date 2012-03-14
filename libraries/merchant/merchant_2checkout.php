@@ -46,19 +46,19 @@ class Merchant_2checkout extends Merchant_driver
 
 	public function purchase()
 	{
-		$this->require_params('reference', 'return_url');
+		$this->require_params('order_id', 'return_url');
 
 		// post data to 2checkout
 		$data = array(
 			'sid' => $this->setting('account_no'),
-			'cart_order_id' => $this->param('reference'),
-			'total' => $this->param('amount'),
+			'cart_order_id' => $this->param('order_id'),
+			'total' => $this->amount_dollars(),
 			'tco_currency' => $this->param('currency'),
 			'fixed' => 'Y',
 			'skip_landing' => 1,
 			'x_receipt_link_url' => $this->param('return_url'),
-			'card_holder_name' => $this->param('card_name'),
-			'street_address' => $this->param('address'),
+			'card_holder_name' => $this->param('name'),
+			'street_address' => $this->param('address1'),
 			'street_address2' => $this->param('address2'),
 			'city' => $this->param('city'),
 			'state' => $this->param('region'),
@@ -78,19 +78,18 @@ class Merchant_2checkout extends Merchant_driver
 
 	public function purchase_return()
 	{
-		$order_number = $this->CI->input->post('order_number');
-		$order_total = $this->CI->input->post('total');
+		$order_number = $this->CI->input->get_post('order_number');
 
+		// strange exception specified by 2Checkout
 		if ($this->setting('test_mode'))
 		{
 			$order_number = '1';
 		}
 
-		$check = strtoupper(md5($this->setting('secret_word').$this->setting('account_no').$order_number.$order_total));
-
-		if ($check == $this->CI->input->post('key'))
+		$key = strtoupper(md5($this->setting('secret_word').$this->setting('account_no').$order_number.$this->amount_dollars()));
+		if ($key == $this->CI->input->get_post('key'))
 		{
-			return new Merchant_response(Merchant_response::COMPLETED, NULL, $this->CI->input->post('order_number'));
+			return new Merchant_response(Merchant_response::COMPLETED, NULL, $order_number);
 		}
 
 		return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
