@@ -609,11 +609,12 @@ abstract class Merchant_driver
 	 * @param string $url The URL to request
 	 * @param string $username
 	 * @param string $password
+	 * @param array $extra_headers
 	 */
-	public function get_request($url, $username = NULL, $password = NULL)
+	public function get_request($url, $username = NULL, $password = NULL, $extra_headers = NULL)
 	{
 		$ch = curl_init($url);
-		return $this->_do_curl_request($ch, $username, $password);
+		return $this->_do_curl_request($ch, $username, $password, $extra_headers);
 	}
 
 	/**
@@ -625,8 +626,9 @@ abstract class Merchant_driver
 	 * @param mixed $data An optional string or array of form data which will be appended to the URL
 	 * @param string $username
 	 * @param string $password
+	 * @param array $extra_headers
 	 */
-	public function post_request($url, $data = NULL, $username = NULL, $password = NULL)
+	public function post_request($url, $data = NULL, $username = NULL, $password = NULL, $extra_headers = NULL)
 	{
 		$ch = curl_init($url);
 
@@ -638,10 +640,10 @@ abstract class Merchant_driver
 		curl_setopt($ch, CURLOPT_POST, TRUE);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 
-		return $this->_do_curl_request($ch, $username, $password);
+		return $this->_do_curl_request($ch, $username, $password, $extra_headers);
 	}
 
-	private function _do_curl_request($ch, $username, $password)
+	private function _do_curl_request($ch, $username, $password, $extra_headers)
 	{
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
@@ -650,6 +652,11 @@ abstract class Merchant_driver
 		if ($username !== NULL)
 		{
 			curl_setopt($ch, CURLOPT_USERPWD, $username.':'.$password);
+		}
+
+		if ( ! empty($extra_headers))
+		{
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $extra_headers);
 		}
 
 		$response = curl_exec($ch);
