@@ -28,7 +28,7 @@
  * Merchant Paypal Pro Class
  *
  * Payment processing using Paypal Payments Pro
- * Documentation: https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/howto_api_reference
+ * Documentation: https://cms.paypal.com/cms_content/US/en_US/files/developer/PP_NVPAPI_DeveloperGuide.pdf
  */
 
 class Merchant_paypal_pro extends Merchant_driver
@@ -46,70 +46,131 @@ class Merchant_paypal_pro extends Merchant_driver
 		);
 	}
 
+	public function authorize()
+	{
+		$request = $this->_build_authorize_or_purchase('Authorization');
+		$response = $this->post_request($this->_process_url(), $request);
+		return new Merchant_paypal_pro_response($response, Merchant_response::AUTHORIZED);
+	}
+
+	public function capture()
+	{
+		$request = $this->_build_capture();
+		$response = $this->post_request($this->_process_url(), $request);
+		return new Merchant_paypal_pro_response($response, Merchant_response::COMPLETED);
+	}
+
 	public function purchase()
 	{
-		$this->require_params('reference', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc');
+		$request = $this->_build_authorize_or_purchase('Sale');
+		$response = $this->post_request($this->_process_url(), $request);
+		return new Merchant_paypal_pro_response($response, Merchant_response::COMPLETED);
+	}
 
-		$card_name = explode(' ', $this->param('card_name'), 2);
+	public function refund()
+	{
+		$request = $this->_build_refund();
+		$response = $this->post_request($this->_process_url(), $request);
+		return new Merchant_paypal_pro_response($response, Merchant_response::REFUNDED);
+	}
 
-		$data = array(
-			'USER' => $this->setting('username'),
-			'PWD' => $this->setting('password'),
-			'SIGNATURE' => $this->setting('signature'),
-			'VERSION' => '65.1',
-			'METHOD' => 'doDirectPayment',
-			'PAYMENTACTION' => 'Sale',
-			'AMT' => sprintf('%01.2f', $this->param('amount')),
-			'CURRENCYCODE' => $this->param('currency'),
-			'ACCT' => $this->param('card_no'),
-			'EXPDATE' => $this->param('exp_month').$this->param('exp_year'),
-			'CVV2' => $this->param('csc'),
-			'IPADDRESS' => $this->CI->input->ip_address(),
-			'FIRSTNAME' => $card_name[0],
-			'LASTNAME' => isset($card_name[1]) ? $card_name[1] : '',
-		);
+	protected function _build_authorize_or_purchase($action)
+	{
+		$this->require_params('card_no', 'first_name', 'last_name', 'exp_month', 'exp_year', 'csc');
 
-		if ($this->param('card_type'))
+		$request = $this->_new_request('DoDirectPayment');
+		$request['PAYMENTACTION'] = $action;
+		$request['DESC'] = $this->param('description');
+		$request['AMT'] = $this->amount_dollars();
+		$request['CURRENCYCODE'] = $this->param('currency');
+		$request['CREDITCARDTYPE'] = $this->param('card_type');
+		$request['ACCT'] = $this->param('card_no');
+		$request['EXPDATE'] = $this->param('exp_month').$this->param('exp_year');
+		$request['STARTDATE'] = $this->param('start_month').$this->param('start_year');
+		$request['CVV2'] = $this->param('csc');
+		$request['ISSUENUMBER'] = $this->param('card_issue');
+		$request['IPADDRESS'] = $this->CI->input->ip_address();
+		$request['FIRSTNAME'] = $this->param('first_name');
+		$request['LASTNAME'] = $this->param('last_name');
+		$request['EMAIL'] = $this->param('email');
+		$request['STREET'] = $this->param('address1');
+		$request['STREET2'] = $this->param('address2');
+		$request['CITY'] = $this->param('city');
+		$request['STATE'] = $this->param('region');
+		$request['ZIP'] = $this->param('postcode');
+		$request['COUNTRYCODE'] = strtoupper($this->param('country'));
+
+		return $request;
+	}
+
+	protected function _build_capture()
+	{
+		$this->require_params('reference', 'amount');
+
+		$request = $this->_new_request('DoCapture');
+		$request['AMT'] = $this->amount_dollars();
+		$request['AUTHORIZATIONID'] = $this->param('reference');
+		$request['COMPLETETYPE'] = 'Complete';
+
+		return $request;
+	}
+
+	protected function _build_refund()
+	{
+		$this->require_params('reference');
+
+		$request = $this->_new_request('RefundTransaction');
+		$request['TRANSACTIONID'] = $this->param('reference');
+		$request['REFUNDTYPE'] = 'Full';
+
+		return $request;
+	}
+
+	protected function _new_request($method)
+	{
+		$request = array();
+		$request['METHOD'] = $method;
+		$request['VERSION'] = '85.0';
+		$request['USER'] = $this->setting('username');
+		$request['PWD'] = $this->setting('password');
+		$request['SIGNATURE'] = $this->setting('signature');
+
+		return $request;
+	}
+
+	protected function _process_url()
+	{
+		return $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+	}
+}
+
+class Merchant_paypal_pro_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response, $success_status)
+	{
+		$this->_response = array();
+		parse_str($response, $this->_response);
+
+		if (isset($this->_response['ACK']) AND
+			($this->_response['ACK'] == 'Success' OR $this->_response['ACK'] == 'SuccessWithWarning'))
 		{
-			$data['CREDITCARDTYPE'] = ucfirst($this->param('card_type'));
-			if ($data['CREDITCARDTYPE'] == 'Mastercard') $data['CREDITCARDTYPE'] = 'MasterCard';
-		}
-
-		if ($this->param('card_issue')) $data['ISSUENUMBER'] = $this->param('card_issue');
-		if ($this->param('start_month') AND $this->param('start_year'))
-		{
-			$data['STARTDATE'] = $this->param('start_month').$this->param('start_year');
-		}
-
-		if ($this->param('address')) $data['STREET'] = $this->param('address');
-		if ($this->param('city')) $data['CITY'] = $this->param('city');
-		if ($this->param('region')) $data['STATE'] = $this->param('region');
-		if ($this->param('postcode')) $data['ZIP'] = $this->param('postcode');
-		if ($this->param('country')) $data['COUNTRYCODE'] = strtoupper($this->param('country'));
-
-		// send request to paypal
-		$response = Merchant::curl_helper($this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL, $data);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
-
-		$response_array = array();
-		parse_str($response['data'], $response_array);
-
-		if (empty($response_array['ACK']))
-		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
-		}
-		elseif ($response_array['ACK'] == 'Success' OR $response_array['ACK'] == 'SuccessWithWarning')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, '', $response_array['TRANSACTIONID'], (double)$response_array['AMT']);
-		}
-		elseif ($response_array['ACK'] == 'Failure' OR $response_array['ACK'] == 'FailureWithWarning')
-		{
-			return new Merchant_response(Merchant_response::FAILED, $response_array['L_ERRORCODE0'].': '.$response_array['L_LONGMESSAGE0']);
+			// because the paypal response doesn't specify the state of the transaction,
+			// we need to specify the status in the constructor
+			$this->_status = $success_status;
+			$this->_reference = isset($this->_response['REFUNDTRANSACTIONID']) ?
+				$this->_response['REFUNDTRANSACTIONID'] :
+				$this->_response['TRANSACTIONID'];
 		}
 		else
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			$this->_status = self::FAILED;
+			$this->_message = isset($this->_response['L_LONGMESSAGE0']) ?
+				$this->_response['L_LONGMESSAGE0'] :
+				'invalid_response';
 		}
 	}
 }
+
 /* End of file ./libraries/merchant/drivers/merchant_paypal_pro.php */
