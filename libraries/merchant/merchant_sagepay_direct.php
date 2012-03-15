@@ -32,120 +32,231 @@
 
 class Merchant_sagepay_direct extends Merchant_driver
 {
-	const PROCESS_URL = 'https://live.sagepay.com/gateway/service/vspdirect-register.vsp';
-	const PROCESS_URL_TEST = 'https://test.sagepay.com/gateway/service/vspdirect-register.vsp';
-	const PROCESS_URL_SIM = 'https://test.sagepay.com/Simulator/VSPDirectGateway.asp';
-
-	const AUTH_URL = 'https://live.sagepay.com/gateway/service/direct3dcallback.vsp';
-	const AUTH_URL_TEST = 'https://test.sagepay.com/gateway/service/direct3dcallback.vsp';
-	const AUTH_URL_SIM = 'https://test.sagepay.com/Simulator/VSPDirectCallback.asp';
+	const PROCESS_URL = 'https://live.sagepay.com/gateway/service';
+	const PROCESS_URL_TEST = 'https://test.sagepay.com/gateway/service';
+	const PROCESS_URL_SIM = 'https://test.sagepay.com/Simulator';
 
 	public function default_settings()
 	{
 		return array(
 			'vendor' => '',
 			'test_mode' => FALSE,
-			'simulator' => FALSE,
+			'simulator_mode' => FALSE,
 		);
+	}
+
+	public function authorize()
+	{
+		$request = $this->_build_authorize_or_purchase('DEFERRED');
+		return $this->_submit_request($request);
+	}
+
+	public function authorize_return()
+	{
+		return $this->_direct3d_return(Merchant_response::AUTHORIZED);
+	}
+
+	public function capture()
+	{
+		$request = $this->_build_capture();
+		return $this->_submit_request($request);
 	}
 
 	public function purchase()
 	{
-		$this->require_params('card_no', 'card_name', 'card_type',
-			'exp_month', 'exp_year', 'csc', 'reference');
+		$request = $this->_build_authorize_or_purchase('PAYMENT');
+		return $this->_submit_request($request);
+	}
 
-		$data = array(
-			'VPSProtocol' => '2.23',
-			'TxType' => 'PAYMENT',
-			'Vendor' => $this->setting('vendor'),
-			'Description' => $this->param('reference'),
-			'Amount' => sprintf('%01.2f', $this->param('amount')),
-			'Currency' => $this->param('currency'),
-			'CardHolder' => $this->param('card_name'),
-			'CardNumber' => $this->param('card_no'),
-			'CV2' => $this->param('csc'),
-			'CardType' => strtoupper($this->param('card_type')),
-			'ExpiryDate' => $this->param('exp_month').($this->param('exp_year') % 100),
-			'ClientIPAddress' => $this->CI->input->ip_address(),
-			'ApplyAVSCV2' => 0,
-			'Apply3DSecure' => 0,
-		);
+	/**
+	 * Only used for returning from Direct 3D Authentication
+	 */
+	public function purchase_return()
+	{
+		return $this->_direct3d_return(Merchant_response::COMPLETED);
+	}
 
-		// SagePay requires a unique VendorTxCode for each transaction
-		$data['VendorTxCode'] = $this->param('transaction_id').'-'.mt_rand(100000000, 999999999);
+	public function refund()
+	{
+		$request = $this->_build_refund();
+		return $this->_submit_request($request);
+	}
 
-		if ($data['CardType'] == 'MASTERCARD') $data['CardType'] = 'MC';
+	protected function _build_authorize_or_purchase($method)
+	{
+		$this->require_params('transaction_id', 'card_no', 'name', 'card_type',
+			'exp_month', 'exp_year', 'csc');
 
-		if ($this->param('card_name'))
+		$request = array();
+		$request['TxType'] = $method;
+		$request['VPSProtocol'] = '2.23';
+		$request['Vendor'] = $this->setting('vendor');
+		$request['Description'] = $this->param('description');
+		$request['Amount'] = $this->amount_dollars();
+		$request['Currency'] = $this->param('currency');
+		$request['VendorTxCode'] = $this->param('transaction_id');
+		$request['CardHolder'] = $this->param('name');
+		$request['CardNumber'] = $this->param('card_no');
+		$request['CV2'] = $this->param('csc');
+		$request['IssueNumber'] = $this->param('card_issue');
+		$request['ExpiryDate'] = $this->param('exp_month').($this->param('exp_year') % 100);
+		$request['ClientIPAddress'] = $this->CI->input->ip_address();
+		$request['CustomerEMail'] = $this->param('email');
+		$request['ApplyAVSCV2'] = 0; // use account setting
+		$request['Apply3DSecure'] = 0; // use account setting
+
+		$request['CardType'] = strtoupper($this->param('card_type'));
+		if ($request['CardType'] == 'MASTERCARD')
 		{
-			$names = explode(' ', $this->param('card_name'), 2);
-			$data['BillingFirstnames'] = $names[0];
-			$data['BillingSurname'] = isset($names[1]) ? $names[1] : '';
-			$data['DeliveryFirstnames'] = $data['BillingFirstnames'];
-			$data['DeliverySurname'] = $data['BillingSurname'];
-		}
-
-		if ($this->param('email')) $data['CustomerEMail'] = $this->param('email');
-
-		foreach (array(
-				'Address1' => 'address',
-				'Address2' => 'address2',
-				'City' => 'city',
-				'PostCode' => 'postcode',
-				'State' => 'region',
-				'Phone' => 'phone',
-			) as $field => $param)
-		{
-			if ($this->param($param))
-			{
-				$data["Billing$field"] = $this->param($param);
-				$data["Delivery$field"] = $this->param($param);
-			}
-		}
-
-		if ($this->param('country'))
-		{
-			$data['BillingCountry'] = $this->param('country') == 'uk' ? 'gb' : $this->param('country');
-			$data['DeliveryCountry'] = $data['BillingCountry'];
-		}
-
-		if ($this->param('card_issue'))
-		{
-			$data['IssueNumber'] = $this->param('card_issue');
+			$request['CardType'] = 'MC';
 		}
 
 		if ($this->param('start_month') AND $this->param('start_year'))
 		{
-			$data['StartDate'] = $this->param('start_month').($this->param('start_year') % 100);
+			$request['StartDate'] = $this->param('start_month').($this->param('start_year') % 100);
 		}
 
-		if ($this->setting('simulator'))
+		// billing details
+		$request['BillingFirstnames'] = $this->param('first_name');
+		$request['BillingSurname'] = $this->param('last_name');
+		$request['BillingAddress1'] = $this->param('address1');
+		$request['BillingAddress2'] = $this->param('address2');
+		$request['BillingCity'] = $this->param('city');
+		$request['BillingPostCode'] = $this->param('postcode');
+		$request['BillingState'] = $this->param('region');
+		$request['BillingCountry'] = $this->param('country') == 'uk' ? 'gb' : $this->param('country');
+		$request['BillingPhone'] = $this->param('phone');
+
+		// shipping details
+		foreach (array('Firstnames', 'Surname', 'Address1', 'Address2', 'City', 'PostCode',
+			'State', 'Country', 'Phone') as $field)
 		{
-			$process_url = self::PROCESS_URL_SIM;
-		}
-		elseif ($this->setting('test_mode'))
-		{
-			$process_url = self::PROCESS_URL_TEST;
-		}
-		else
-		{
-			$process_url = self::PROCESS_URL;
+			$request["Delivery$field"] = $request["Billing$field"];
 		}
 
-		$response = Merchant::curl_helper($process_url, $data);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
-
-		return $this->_process_response($response['data']);
+		return $request;
 	}
 
-	/**
-	 * Only used for returning from 3D Secure Authentication
-	 */
-	public function purchase_return()
+	protected function _build_capture()
+	{
+		$this->require_params('reference', 'amount');
+
+		$reference = $this->_decode_reference($this->param('reference'));
+
+		$request = array();
+		$request['TxType'] = 'RELEASE';
+		$request['VPSProtocol'] = '2.23';
+		$request['Vendor'] = $this->setting('vendor');
+		$request['ReleaseAmount'] = $this->amount_dollars();
+		$request['VendorTxCode'] = $reference->VendorTxCode;
+		$request['VPSTxId'] = $reference->VPSTxId;
+		$request['SecurityKey'] = $reference->SecurityKey;
+		$request['TxAuthNo'] = $reference->TxAuthNo;
+
+		return $request;
+	}
+
+	protected function _build_refund()
+	{
+		$this->require_params('reference', 'amount');
+
+		$reference = $this->_decode_reference($this->param('reference'));
+
+		$request = array();
+		$request['TxType'] = 'REFUND';
+		$request['VPSProtocol'] = '2.23';
+		$request['Vendor'] = $this->setting('vendor');
+		$request['Amount'] = $this->amount_dollars();
+		$request['Currency'] = $this->param('currency');
+		$request['Description'] = $this->param('description');
+		$request['RelatedVendorTxCode'] = $reference->VendorTxCode;
+		$request['RelatedVPSTxId'] = $reference->VPSTxId;
+		$request['RelatedSecurityKey'] = $reference->SecurityKey;
+		$request['RelatedTxAuthNo'] = $reference->TxAuthNo;
+
+		// VendorTxCode must be unique for the refund
+		$request['VendorTxCode'] = $this->param('transaction_id').'-'.mt_rand(100, 999);
+
+		return $request;
+	}
+
+	protected function _submit_request($request)
+	{
+		$process_url = $this->_process_url($request['TxType']);
+		$response = $this->post_request($process_url, $request);
+		$response = $this->_decode_response($response);
+
+		// do we need to redirect for 3D authentication?
+		if (isset($response['Status']) AND $response['Status'] == '3DAUTH')
+		{
+			$data = array(
+				'PaReq' => $response['PAReq'],
+				'TermUrl' => $this->param('return_url'),
+				'MD' => $response['MD'],
+			);
+
+			$this->post_redirect($response['ACSURL'], $data,
+				'Please wait while we redirect you to your card issuer for authentication...');
+		}
+
+		// record the VendorTxCode so we can use it for capture/refunds
+		$response['VendorTxCode'] = $request['VendorTxCode'];
+
+		switch ($request['TxType'])
+		{
+			case 'DEFERRED':
+				$success_status = Merchant_response::AUTHORIZED;
+				break;
+			case 'RELEASE':
+				$success_status = Merchant_response::COMPLETED;
+				break;
+			case 'PAYMENT':
+				$success_status = Merchant_response::COMPLETED;
+				break;
+			case 'REFUND':
+				$success_status = Merchant_response::REFUNDED;
+				break;
+		}
+
+		return new Merchant_sagepay_direct_response($response, $success_status);
+	}
+
+	protected function _process_url($service)
+	{
+		$service = strtolower($service);
+		if ($service == 'payment' OR $service == 'deferred')
+		{
+			$service = 'vspdirect-register';
+		}
+
+		if ($this->setting('simulator_mode'))
+		{
+			// hooray for consistency
+			if ($service == 'vspdirect-register')
+			{
+				return self::PROCESS_URL_SIM.'/VSPDirectGateway.asp';
+			}
+			elseif ($service == 'direct3dcallback')
+			{
+				return self::PROCESS_URL_SIM.'/VSPDirectCallback.asp';
+			}
+
+			return self::PROCESS_URL_SIM.'/VSPServerGateway.asp?Service=Vendor'.ucfirst($service).'Tx';
+		}
+
+		if ($this->setting('test_mode'))
+		{
+			return self::PROCESS_URL_TEST."/$service.vsp";
+		}
+
+		return self::PROCESS_URL."/$service.vsp";
+	}
+
+	protected function _direct3d_return($success_status)
 	{
 		$data = array(
 			'MD' => $this->CI->input->post('MD'),
-			'PARes' => $this->CI->input->post('PaRes'),
+			'PARes' => $this->CI->input->post('PaRes'), // inconsistent caps are intentional
 		);
 
 		if (empty($data['MD']) OR empty($data['PARes']))
@@ -153,58 +264,17 @@ class Merchant_sagepay_direct extends Merchant_driver
 			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
 		}
 
-		if ($this->setting('simulator'))
-		{
-			$auth_url = self::AUTH_URL_SIM;
-		}
-		elseif ($this->setting('test_mode'))
-		{
-			$auth_url = self::AUTH_URL_TEST;
-		}
-		else
-		{
-			$auth_url = self::AUTH_URL;
-		}
-
-		$response = Merchant::curl_helper($auth_url, $data);
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
-
-		return $this->_process_response($response['data']);
-	}
-
-	protected function _process_response($response)
-	{
+		$response = $this->post_request($this->_process_url('direct3dcallback'), $data);
 		$response = $this->_decode_response($response);
 
-		if (empty($response['Status']))
-		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
-		}
+		// record the VendorTxCode so we can use it for capture/refunds
+		$response['VendorTxCode'] = $this->param('transaction_id');
 
-		$txn_id = empty($response['VPSTxId']) ? NULL : $response['VPSTxId'];
-		$message = empty($response['StatusDetail']) ? NULL : $response['StatusDetail'];
-
-		if ($response['Status'] == 'OK')
-		{
-			return new Merchant_response(Merchant_response::COMPLETED, $message, $txn_id, (double)$this->param('amount'));
-		}
-
-		if ($response['Status'] == '3DAUTH')
-		{
-			// redirect to card issuer for 3D Authentication
-			$data = array(
-				'PaReq' => $response['PAReq'],
-				'TermUrl' => $this->param('return_url'),
-				'MD' => $response['MD'],
-			);
-			Merchant::redirect_post($response['ACSURL'], $data, 'Please wait while we redirect you to your card issuer for authentication...');
-		}
-
-		return new Merchant_response(Merchant_response::FAILED, $message, $txn_id);
+		return new Merchant_sagepay_direct_response($response, $success_status);
 	}
 
 	/**
-	 * Convert weird ini-type format into a useful array
+	 * Convert ini-style response into a useful array
 	 */
 	protected function _decode_response($response)
 	{
@@ -221,6 +291,60 @@ class Merchant_sagepay_direct extends Merchant_driver
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Decode transaction references stored in our custom format
+	 * VendorTxCode;VPSTxId;SecurityKey;TxAuthNo
+	 */
+	protected function _decode_reference($reference)
+	{
+		$reference = explode(';', $reference);
+
+		return (object)array(
+			'VendorTxCode' => isset($reference[0]) ? $reference[0] : NULL,
+			'VPSTxId' => isset($reference[1]) ? $reference[1] : NULL,
+			'SecurityKey' => isset($reference[2]) ? $reference[2] : NULL,
+			'TxAuthNo' => isset($reference[3]) ? $reference[3] : NULL,
+		);
+	}
+}
+
+class Merchant_sagepay_direct_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response, $success_status)
+	{
+		// init expected fields to avoid php errors
+		$this->_response = array_merge(array(
+			'Status' => NULL,
+			'StatusDetail' => NULL,
+			'VendorTxCode' => NULL,
+			'VPSTxId' => NULL,
+			'SecurityKey' => NULL,
+			'TxAuthNo' => NULL,
+			), $response);
+
+		$this->_message = $this->_response['StatusDetail'];
+
+		if ($this->_response['Status'] == 'OK')
+		{
+			$this->_status = $success_status;
+
+			if ($this->_response['VPSTxId'])
+			{
+				$this->_reference = implode(';', array($this->_response['VendorTxCode'],
+					$this->_response['VPSTxId'],
+					$this->_response['SecurityKey'],
+					$this->_response['TxAuthNo']));
+			}
+		}
+		else
+		{
+			$this->_status = self::FAILED;
+			if (empty($this->_message)) $this->_message = 'invalid_response';
+		}
 	}
 }
 
