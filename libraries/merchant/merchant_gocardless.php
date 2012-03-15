@@ -63,7 +63,7 @@ class Merchant_gocardless extends Merchant_driver
 					'first_name' => $this->param('first_name'),
 					'last_name' => $this->param('last_name'),
 					'email' => $this->param('email'),
-					'billing_address1' => $this->param('address'),
+					'billing_address1' => $this->param('address1'),
 					'billing_address2' => $this->param('address2'),
 					'billing_town' => $this->param('city'),
 					'billing_county' => $this->param('country'),
