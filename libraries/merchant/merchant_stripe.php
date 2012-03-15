@@ -27,7 +27,8 @@
 /**
  * Merchant Stripe Class
  *
- * Payment processing using Stripe (https://stripe.com/)
+ * Payment processing using Stripe
+ * Documentation: https://stripe.com/docs/api
  */
 
 class Merchant_stripe extends Merchant_driver
