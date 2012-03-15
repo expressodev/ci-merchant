@@ -28,6 +28,7 @@
  * Merchant WorldPay Class
  *
  * Payment processing using WorldPay (external)
+ * Documentataion: http://www.worldpay.com/support/kb/bg/htmlredirect/rhtml.html
  */
 
 class Merchant_worldpay extends Merchant_driver
@@ -47,37 +48,33 @@ class Merchant_worldpay extends Merchant_driver
 
 	public function purchase()
 	{
-		$this->require_params('reference', 'return_url');
-
-		$data = array(
-			'instId' => $this->setting('installation_id'),
-			'cartId' => $this->param('reference'),
-			'amount' => $this->param('amount'),
-			'currency' => $this->param('currency'),
-			'testMode' => $this->setting('test_mode') ? 100 : 0,
-			'MC_callback' => $this->param('return_url'),
-		);
-
-		if ($this->param('card_name')) $data['name'] = $this->param('card_name');
-		if ($this->param('address')) $data['address1'] = $this->param('address');
-		if ($this->param('address2')) $data['address2'] = $this->param('address2');
-		if ($this->param('city')) $data['town'] = $this->param('city');
-		if ($this->param('region')) $data['region'] = $this->param('region');
-		if ($this->param('postcode')) $data['postcode'] = $this->param('postcode');
-		if ($this->param('country')) $data['country'] = $this->param('country');
-		if ($this->param('phone')) $data['tel'] = $this->param('phone');
-		if ($this->param('email')) $data['email'] = $this->param('email');
+		$request = array();
+		$request['instId'] = $this->setting('installation_id');
+		$request['cartId'] = $this->param('order_id');
+		$request['desc'] = $this->param('description');
+		$request['amount'] = $this->amount_dollars();
+		$request['currency'] = $this->param('currency');
+		$request['testMode'] = $this->setting('test_mode') ? 100 : 0;
+		$request['MC_callback'] = $this->param('return_url');
+		$request['name'] = $this->param('name');
+		$request['address1'] = $this->param('address1');
+		$request['address2'] = $this->param('address2');
+		$request['town'] = $this->param('city');
+		$request['region'] = $this->param('region');
+		$request['postcode'] = $this->param('postcode');
+		$request['country'] = $this->param('country');
+		$request['tel'] = $this->param('phone');
+		$request['email'] = $this->param('email');
 
 		if ($this->setting('secret'))
 		{
-			$data['signatureFields'] = 'instId:amount:currency:cartId';
+			$request['signatureFields'] = 'instId:amount:currency:cartId';
 			$signature_data = array($this->setting('secret'),
-				$data['instId'], $data['amount'], $data['currency'], $data['cartId']);
-			$data['signature'] = md5(implode(':', $signature_data));
+				$request['instId'], $request['amount'], $request['currency'], $request['cartId']);
+			$request['signature'] = md5(implode(':', $signature_data));
 		}
 
-		$post_url = $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
-		Merchant::redirect_post($post_url, $data);
+		$this->redirect($this->_process_url().'?'.http_build_query($request));
 	}
 
 	public function purchase_return()
@@ -104,6 +101,11 @@ class Merchant_worldpay extends Merchant_driver
 			$amount = $this->CI->input->post('authAmount');
 			return new Merchant_response(Merchant_response::COMPLETED, NULL, $transaction_id, $amount);
 		}
+	}
+
+	private function _process_url()
+	{
+		return $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
 	}
 }
 
