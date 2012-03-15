@@ -84,7 +84,7 @@ class Merchant_dps_pxpay extends Merchant_driver
 			}
 			elseif ((string)$xml->TxnType == 'Purchase')
 			{
-				return new Merchant_response(Merchant_response::COMPLETED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+				return new Merchant_response(Merchant_response::COMPLETE, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
 			}
 		}
 

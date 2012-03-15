@@ -50,7 +50,7 @@ class Merchant_manual extends Merchant_driver
 	 */
 	public function capture()
 	{
-		return new Merchant_response(Merchant_response::COMPLETED);
+		return new Merchant_response(Merchant_response::COMPLETE);
 	}
 }
 

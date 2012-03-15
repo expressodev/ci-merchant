@@ -45,7 +45,7 @@ class Merchant_dummy extends Merchant_driver
 
 		if ($this->param('card_no') == self::DUMMY_CARD)
 		{
-			return new Merchant_response(Merchant_response::COMPLETED);
+			return new Merchant_response(Merchant_response::COMPLETE);
 		}
 		else
 		{

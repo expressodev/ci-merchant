@@ -57,14 +57,14 @@ class Merchant_paypal_pro extends Merchant_driver
 	{
 		$request = $this->_build_capture();
 		$response = $this->post_request($this->_process_url(), $request);
-		return new Merchant_paypal_pro_response($response, Merchant_response::COMPLETED);
+		return new Merchant_paypal_pro_response($response, Merchant_response::COMPLETE);
 	}
 
 	public function purchase()
 	{
 		$request = $this->_build_authorize_or_purchase('Sale');
 		$response = $this->post_request($this->_process_url(), $request);
-		return new Merchant_paypal_pro_response($response, Merchant_response::COMPLETED);
+		return new Merchant_paypal_pro_response($response, Merchant_response::COMPLETE);
 	}
 
 	public function refund()

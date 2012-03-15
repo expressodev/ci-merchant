@@ -153,13 +153,13 @@ class Merchant_authorize_net_response extends Merchant_response
 				switch (strtoupper($this->_response_array[11]))
 				{
 					case 'AUTH_CAPTURE':
-						$this->_status = self::COMPLETED;
+						$this->_status = self::COMPLETE;
 						break;
 					case 'AUTH_ONLY':
 						$this->_status = self::AUTHORIZED;
 						break;
 					case 'PRIOR_AUTH_CAPTURE':
-						$this->_status = self::COMPLETED;
+						$this->_status = self::COMPLETE;
 						break;
 				}
 			}

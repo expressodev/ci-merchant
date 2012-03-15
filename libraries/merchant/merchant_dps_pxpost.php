@@ -127,10 +127,10 @@ class Merchant_dps_pxpost_response extends Merchant_response
 					$this->_status = self::AUTHORIZED;
 					break;
 				case 'Complete':
-					$this->_status = self::COMPLETED;
+					$this->_status = self::COMPLETE;
 					break;
 				case 'Purchase':
-					$this->_status = self::COMPLETED;
+					$this->_status = self::COMPLETE;
 					break;
 				case 'Refund':
 					$this->_status = self::REFUNDED;

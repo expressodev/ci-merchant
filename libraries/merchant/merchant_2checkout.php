@@ -89,7 +89,7 @@ class Merchant_2checkout extends Merchant_driver
 		$key = strtoupper(md5($this->setting('secret_word').$this->setting('account_no').$order_number.$this->amount_dollars()));
 		if ($key == $this->CI->input->get_post('key'))
 		{
-			return new Merchant_response(Merchant_response::COMPLETED, NULL, $order_number);
+			return new Merchant_response(Merchant_response::COMPLETE, NULL, $order_number);
 		}
 
 		return new Merchant_response(Merchant_response::FAILED, 'invalid_response');

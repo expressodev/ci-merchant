@@ -106,7 +106,7 @@ class Merchant_eway_response extends Merchant_response
 
 		if ((string)$this->_response->ewayTrxnStatus == 'True')
 		{
-			$this->_status = self::COMPLETED;
+			$this->_status = self::COMPLETE;
 		}
 	}
 }

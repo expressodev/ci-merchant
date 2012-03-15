@@ -98,7 +98,7 @@ class Merchant_gocardless extends Merchant_driver
 
 		if ( ! empty($response->success))
 		{
-			return new Merchant_response(Merchant_response::COMPLETED, NULL, $data['resource_id']);
+			return new Merchant_response(Merchant_response::COMPLETE, NULL, $data['resource_id']);
 		}
 
 		$error_message = isset($response->error) ? $response->error : 'invalid_response';

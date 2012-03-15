@@ -112,7 +112,7 @@ class Merchant_authorize_net_sim extends Merchant_authorize_net
 			// it may have been tampered with
 			if ($method == 'AUTH_CAPTURE')
 			{
-				return new Merchant_response(Merchant_response::COMPLETED, $message, $reference);
+				return new Merchant_response(Merchant_response::COMPLETE, $message, $reference);
 			}
 			else
 			{

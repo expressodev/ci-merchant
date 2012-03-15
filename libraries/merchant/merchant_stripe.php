@@ -94,7 +94,7 @@ class Merchant_stripe_response extends Merchant_response
 		}
 		else
 		{
-			$this->_status = self::COMPLETED;
+			$this->_status = self::COMPLETE;
 			$this->_reference = $this->_response->id;
 		}
 	}

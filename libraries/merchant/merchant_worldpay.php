@@ -99,7 +99,7 @@ class Merchant_worldpay extends Merchant_driver
 		{
 			$transaction_id = $this->CI->input->post('transId');
 			$amount = $this->CI->input->post('authAmount');
-			return new Merchant_response(Merchant_response::COMPLETED, NULL, $transaction_id, $amount);
+			return new Merchant_response(Merchant_response::COMPLETE, NULL, $transaction_id, $amount);
 		}
 	}
 

@@ -83,7 +83,7 @@ class Merchant_eway_shared extends Merchant_driver
 
 		if ((string)$xml->TrxnStatus == 'True')
 		{
-			return new Merchant_response(Merchant_response::COMPLETED, NULL, (string)$xml->TrxnNumber);
+			return new Merchant_response(Merchant_response::COMPLETE, NULL, (string)$xml->TrxnNumber);
 		}
 
 		return new Merchant_response(Merchant_response::FAILED,

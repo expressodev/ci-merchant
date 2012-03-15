@@ -730,12 +730,12 @@ class Merchant_exception extends Exception {}
 class Merchant_response
 {
 	const AUTHORIZED = 'authorized';
-	const COMPLETED = 'completed';
+	const COMPLETE = 'complete';
 	const FAILED = 'failed';
 	const REFUNDED = 'refunded';
 
 	/**
-	 * @var string one of 'authorized', 'completed', 'failed', or 'refunded'
+	 * @var string one of 'authorized', 'complete', 'failed', or 'refunded'
 	 */
 	protected $_status;
 
@@ -755,7 +755,7 @@ class Merchant_response
 		if ($status == 'declined') $status = self::FAILED;
 
 		// always require a valid status
-		if ( ! in_array($status, array(self::AUTHORIZED, self::COMPLETED, self::FAILED, self::REFUNDED)))
+		if ( ! in_array($status, array(self::AUTHORIZED, self::COMPLETE, self::FAILED, self::REFUNDED)))
 		{
 			throw new InvalidArgumentException('Invalid payment status');
 		}

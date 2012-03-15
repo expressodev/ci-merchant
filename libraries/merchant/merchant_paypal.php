@@ -130,7 +130,7 @@ class Merchant_paypal_response extends Merchant_response
 		$payment_status = $this->_response['payment_status'];
 		if ($payment_status == 'Completed')
 		{
-			$this->_status = self::COMPLETED;
+			$this->_status = self::COMPLETE;
 		}
 		elseif ($payment_status == 'Refunded' OR $payment_status == 'Voided')
 		{

@@ -73,7 +73,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 	 */
 	public function purchase_return()
 	{
-		return $this->_direct3d_return(Merchant_response::COMPLETED);
+		return $this->_direct3d_return(Merchant_response::COMPLETE);
 	}
 
 	public function refund()
@@ -208,10 +208,10 @@ class Merchant_sagepay_direct extends Merchant_driver
 				$success_status = Merchant_response::AUTHORIZED;
 				break;
 			case 'RELEASE':
-				$success_status = Merchant_response::COMPLETED;
+				$success_status = Merchant_response::COMPLETE;
 				break;
 			case 'PAYMENT':
-				$success_status = Merchant_response::COMPLETED;
+				$success_status = Merchant_response::COMPLETE;
 				break;
 			case 'REFUND':
 				$success_status = Merchant_response::REFUNDED;
