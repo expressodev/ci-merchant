@@ -43,28 +43,61 @@ class Merchant_stripe extends Merchant_driver
 
 	public function purchase()
 	{
-		$this->require_params('token', 'reference');
+		$this->require_params('token');
 
-		$request = array(
-			'amount' => round($this->param('amount') * 100),
-			'card' => $this->param('token'),
-			'currency' => strtolower($this->param('currency')),
-			'description' => $this->param('reference'),
-		);
+		$request = array();
+		$request['amount'] = $this->amount_cents();
+		$request['card'] = $this->param('token');
+		$request['currency'] = strtolower($this->param('currency'));
+		$request['description'] = $this->param('description');
 
-		$response = Merchant::curl_helper(self::PROCESS_URL.'/v1/charges', $request, $this->setting('api_key'));
-		if ( ! empty($response['error'])) return new Merchant_response(Merchant_response::FAILED, $response['error']);
+		$process_url = self::PROCESS_URL.'/v1/charges';
+		$response = $this->post_request($process_url, $request, $this->setting('api_key'));
+		return new Merchant_stripe_response($response);
+	}
 
-		$data = json_decode($response['data']);
-		if (isset($data->error))
+	public function refund()
+	{
+		$this->require_params('reference', 'amount');
+
+		$request = array('amount' => $this->amount_cents());
+
+		$process_url = self::PROCESS_URL.'/v1/charges/'.$this->param('reference').'/refund';
+		$response = $this->post_request($process_url, $request, $this->setting('api_key'));
+		return new Merchant_stripe_response($response);
+	}
+}
+
+class Merchant_stripe_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response)
+	{
+		$this->_response = json_decode($response);
+
+		if (empty($this->_response))
 		{
-			return new Merchant_response(Merchant_response::FAILED, $data->error->message);
+			$this->_status = self::FAILED;
+			$this->_message = 'invalid_response';
+		}
+		elseif (isset($this->_response->error))
+		{
+			$this->_status = self::FAILED;
+			$this->_message = $this->_response->error->message;
+		}
+		elseif ($this->_response->refunded)
+		{
+			$this->_status = self::REFUNDED;
+			$this->_reference = $this->_response->id;
 		}
 		else
 		{
-			return new Merchant_response(Merchant_response::COMPLETED, '', $data->id, $data->amount / 100);
+			$this->_status = self::COMPLETED;
+			$this->_reference = $this->_response->id;
 		}
 	}
 }
+
 
 /* End of file ./libraries/merchant/drivers/merchant_stripe.php */
