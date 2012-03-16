@@ -69,8 +69,8 @@ $lang = array(
 	// status/error messages
 	'merchant_insecure_connection'			=> 'Card details must be submitted over a secure connection.',
 	'merchant_required'						=> 'The %s field is required.',
-	'merchant_invalid_card_no'				=> 'Invalid credit card number.',
-	'merchant_card_expired'					=> 'Your credit card has expired.',
+	'merchant_invalid_card_no'				=> 'Card Number is invalid.',
+	'merchant_card_expired'					=> 'Card has expired.',
 	'merchant_invalid_status'				=> 'Invalid payment status',
 	'merchant_invalid_method'				=> 'Method not supported by this gateway.',
 	'merchant_invalid_response'				=> 'Invalid response from payment gateway.',
