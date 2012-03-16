@@ -69,7 +69,7 @@ class Merchant_eway_shared extends Merchant_driver
 		$payment_code = $this->CI->input->get_post('AccessPaymentCode');
 		if (empty($payment_code))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		$data = array(

@@ -80,7 +80,7 @@ class Merchant_stripe_response extends Merchant_response
 		if (empty($this->_response))
 		{
 			$this->_status = self::FAILED;
-			$this->_message = 'invalid_response';
+			$this->_message = lang('merchant_invalid_response');
 		}
 		elseif (isset($this->_response->error))
 		{

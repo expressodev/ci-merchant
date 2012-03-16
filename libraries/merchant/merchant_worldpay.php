@@ -82,13 +82,13 @@ class Merchant_worldpay extends Merchant_driver
 		$callback_pw = (string)$this->CI->input->post('callbackPW');
 		if ($callback_pw != $this->setting('payment_response_password'))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		$status = $this->CI->input->post('transStatus');
 		if (empty($status))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 		elseif ($status != 'Y')
 		{

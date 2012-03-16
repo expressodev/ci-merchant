@@ -168,7 +168,7 @@ class Merchant_paypal_pro_response extends Merchant_response
 			$this->_status = self::FAILED;
 			$this->_message = isset($this->_response['L_LONGMESSAGE0']) ?
 				$this->_response['L_LONGMESSAGE0'] :
-				'invalid_response';
+				lang('merchant_invalid_response');
 		}
 	}
 }

@@ -92,7 +92,7 @@ class Merchant_2checkout extends Merchant_driver
 			return new Merchant_response(Merchant_response::COMPLETE, NULL, $order_number);
 		}
 
-		return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+		return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 	}
 }
 

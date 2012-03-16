@@ -88,7 +88,7 @@ class Merchant_gocardless extends Merchant_driver
 
 		if ($this->_generate_signature($data) !== $this->CI->input->get('signature'))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		unset($data['resource_uri']);
@@ -101,7 +101,7 @@ class Merchant_gocardless extends Merchant_driver
 			return new Merchant_response(Merchant_response::COMPLETE, NULL, $data['resource_id']);
 		}
 
-		$error_message = isset($response->error) ? $response->error : 'invalid_response';
+		$error_message = isset($response->error) ? $response->error : lang('merchant_invalid_response');
 		return new Merchant_response(Merchant_response::FAILED, $error_message);
 	}
 

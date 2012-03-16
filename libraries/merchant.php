@@ -413,17 +413,17 @@ abstract class Merchant_driver
 
 	public function authorize()
 	{
-		throw new BadMethodCallException("Method not supported by this gateway.");
+		throw new BadMethodCallException(lang('merchant_invalid_method'));
 	}
 
 	public function authorize_return()
 	{
-		throw new BadMethodCallException("Method not supported by this gateway.");
+		throw new BadMethodCallException(lang('merchant_invalid_method'));
 	}
 
 	public function capture()
 	{
-		throw new BadMethodCallException("Method not supported by this gateway.");
+		throw new BadMethodCallException(lang('merchant_invalid_method'));
 	}
 
 	public function purchase()
@@ -439,7 +439,7 @@ abstract class Merchant_driver
 			return $this->_process($this->_params);
 		}
 
-		throw new BadMethodCallException("Method not supported by this gateway.");
+		throw new BadMethodCallException(lang('merchant_invalid_method'));
 	}
 
 	public function purchase_return()
@@ -455,12 +455,12 @@ abstract class Merchant_driver
 			return $this->_process_return($this->_params);
 		}
 
-		throw new BadMethodCallException("Method not supported by this gateway.");
+		throw new BadMethodCallException(lang('merchant_invalid_method'));
 	}
 
 	public function refund()
 	{
-		throw new BadMethodCallException("Method not supported by this gateway.");
+		throw new BadMethodCallException(lang('merchant_invalid_method'));
 	}
 
 	public function param($name)
@@ -485,7 +485,7 @@ abstract class Merchant_driver
 		{
 			if (empty($this->_params[$name]))
 			{
-				throw new Merchant_exception(str_replace('%s', $name, "The %s field is required."));
+				throw new Merchant_exception(str_replace('%s', lang("merchant_$name"), lang('merchant_required')));
 			}
 		}
 	}
@@ -497,7 +497,7 @@ abstract class Merchant_driver
 
 		if ( ! $this->secure_request())
 		{
-			throw new Merchant_exception('Card details must be submitted over a secure connection.');
+			throw new Merchant_exception(lang('merchant_insecure_connection'));
 		}
 
 		// strip any non-digits from card_no
@@ -505,13 +505,13 @@ abstract class Merchant_driver
 
 		if ($this->validate_luhn($this->_params['card_no']) == FALSE)
 		{
-			throw new Merchant_exception('Invalid card number.');
+			throw new Merchant_exception(lang('merchant_invalid_card_no'));
 		}
 
 		if ($this->param('exp_month') AND $this->param('exp_year') AND
 			$this->validate_expiry($this->param('exp_month'), $this->param('exp_year')) == FALSE)
 		{
-			throw new Merchant_exception('Credit card has expired.');
+			throw new Merchant_exception(lang('merchant_card_expired'));
 		}
 	}
 
@@ -702,7 +702,7 @@ abstract class Merchant_driver
 	{
 		if (empty($message))
 		{
-			$message = 'Please wait while we redirect you to the payment page...';
+			$message = lang('merchant_payment_redirect');
 		}
 
 		?><!DOCTYPE html>
@@ -757,7 +757,7 @@ class Merchant_response
 		// always require a valid status
 		if ( ! in_array($status, array(self::AUTHORIZED, self::COMPLETE, self::FAILED, self::REFUNDED)))
 		{
-			throw new InvalidArgumentException('Invalid payment status');
+			throw new InvalidArgumentException(lang('merchant_invalid_status'));
 		}
 
 		$this->_status = $status;

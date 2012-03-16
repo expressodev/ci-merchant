@@ -64,12 +64,12 @@ class Merchant_paypal extends Merchant_driver
 	{
 		if (empty($_POST['txn_id']))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		if ( ! $this->_validate_return($_POST))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		return new Merchant_paypal_response($_POST);

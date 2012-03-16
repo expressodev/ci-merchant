@@ -99,7 +99,7 @@ class Merchant_authorize_net_sim extends Merchant_authorize_net
 	{
 		if ( ! $this->_validate_return_hash())
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		$response_code = $this->CI->input->post('x_response_code');

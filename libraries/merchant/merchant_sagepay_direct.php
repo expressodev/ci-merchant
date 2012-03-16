@@ -195,8 +195,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 				'MD' => $response['MD'],
 			);
 
-			$this->post_redirect($response['ACSURL'], $data,
-				'Please wait while we redirect you to your card issuer for authentication...');
+			$this->post_redirect($response['ACSURL'], $data, lang('merchant_3dauth_redirect'));
 		}
 
 		// record the VendorTxCode so we can use it for capture/refunds
@@ -261,7 +260,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 
 		if (empty($data['MD']) OR empty($data['PARes']))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		$response = $this->post_request($this->_process_url('direct3dcallback'), $data);
@@ -343,7 +342,7 @@ class Merchant_sagepay_direct_response extends Merchant_response
 		else
 		{
 			$this->_status = self::FAILED;
-			if (empty($this->_message)) $this->_message = 'invalid_response';
+			if (empty($this->_message)) $this->_message = lang('merchant_invalid_response');
 		}
 	}
 }

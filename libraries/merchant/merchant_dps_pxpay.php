@@ -64,7 +64,7 @@ class Merchant_dps_pxpay extends Merchant_driver
 		$result = $this->CI->input->get_post('result');
 		if (empty($result))
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		// validate dps response
@@ -116,7 +116,7 @@ class Merchant_dps_pxpay extends Merchant_driver
 		}
 		else
 		{
-			return new Merchant_response(Merchant_response::FAILED, 'invalid_response');
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 	}
 }

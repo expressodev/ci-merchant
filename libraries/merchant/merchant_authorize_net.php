@@ -142,7 +142,7 @@ class Merchant_authorize_net_response extends Merchant_response
 		if (count($this->_response_array) < 10)
 		{
 			$this->_status == self::FAILED;
-			$this->_message = 'invalid_response';
+			$this->_message = lang('merchant_invalid_response');
 		}
 		else
 		{
