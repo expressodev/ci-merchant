@@ -14,6 +14,7 @@ $lang = array(
 	'merchant_gocardless'					=> 'GoCardless',
 	'merchant_manual'						=> 'Manual',
 	'merchant_ogone_directlink'				=> 'Ogone DirectLink',
+	'merchant_payflow_pro'					=> 'Payflow Pro',
 	'merchant_paypal'						=> 'Paypal',
 	'merchant_paypal_pro'					=> 'Paypal Pro',
 	'merchant_sagepay_direct'				=> 'Sagepay Direct',
