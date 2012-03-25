@@ -28,6 +28,7 @@
  * Merchant Paypal Class
  *
  * Payment processing using Paypal Payments Standard
+ * Documentation: https://cms.paypal.com/cms_content/US/en_US/files/developer/PP_WebsitePaymentsStandard_IntegrationGuide.pdf
  */
 
 class Merchant_paypal extends Merchant_driver
