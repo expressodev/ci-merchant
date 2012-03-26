@@ -123,7 +123,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 		$request['BillingAddress2'] = $this->param('address2');
 		$request['BillingCity'] = $this->param('city');
 		$request['BillingPostCode'] = $this->param('postcode');
-		$request['BillingState'] = $this->param('region');
+		$request['BillingState'] = $this->param('country') == 'us' ? $this->param('region') : '';
 		$request['BillingCountry'] = $this->param('country') == 'uk' ? 'gb' : $this->param('country');
 		$request['BillingPhone'] = $this->param('phone');
 
