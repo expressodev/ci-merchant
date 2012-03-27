@@ -25,33 +25,33 @@
  */
 
 /**
- * Merchant Dummy Class
+ * Merchant Manual Class
  *
- * Handles sample payment processing (authorizes when using the test credit card number only)
+ * Handles manual payment processing (authorizes any amount)
  */
 
-class Merchant_dummy extends Merchant_driver
+class Merchant_manual extends Merchant_driver
 {
-	const DUMMY_CARD = '4111111111111111';
-
 	public function default_settings()
 	{
 		return array();
 	}
 
-	public function purchase()
+	/**
+	 * Hey, cool! This driver just authorizes anything you throw at it.
+	 */
+	public function authorize()
 	{
-		$this->require_params('card_no', 'name', 'exp_month', 'exp_year', 'csc');
+		return new Merchant_response(Merchant_response::AUTHORIZED);
+	}
 
-		if ($this->param('card_no') == self::DUMMY_CARD)
-		{
-			return new Merchant_response(Merchant_response::COMPLETE);
-		}
-		else
-		{
-			return new Merchant_response(Merchant_response::FAILED, 'The transaction was declined');
-		}
+	/**
+	 * We also can also capture anything you like.
+	 */
+	public function capture()
+	{
+		return new Merchant_response(Merchant_response::COMPLETE);
 	}
 }
 
-/* End of file ./libraries/merchant/drivers/merchant_dummy.php */
+/* End of file ./libraries/merchant/drivers/merchant_manual.php */

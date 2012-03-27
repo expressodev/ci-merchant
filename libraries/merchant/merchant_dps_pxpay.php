@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,91 +28,95 @@
  * Merchant DPS PxPay Class
  *
  * Payment processing using DPS PaymentExpress PxPay (hosted)
+ * Documentation: http://www.paymentexpress.com/technical_resources/ecommerce_hosted/pxpay.html
  */
 
 class Merchant_dps_pxpay extends Merchant_driver
 {
 	const PROCESS_URL = 'https://sec.paymentexpress.com/pxpay/pxaccess.aspx';
 
-	public $required_fields = array('email', 'amount', 'reference', 'currency_code', 'return_url', 'cancel_url');
-
-	public $settings = array(
-		'user_id' => '',
-		'key' => '',
-		'enable_token_billing' => FALSE
-	);
-
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
+		return array(
+			'user_id' => '',
+			'key' => '',
+			'enable_token_billing' => FALSE
+		);
 	}
 
-	public function _process($params)
+	public function authorize()
 	{
-		$this->CI->load->helper('url');
-
-		// ask DPS to generate request url
-		$request = '<GenerateRequest>'.
-			'<PxPayUserId>'.$this->settings['user_id'].'</PxPayUserId>'.
-			'<PxPayKey>'.$this->settings['key'].'</PxPayKey>'.
-			'<AmountInput>'.sprintf('%01.2f', $params['amount']).'</AmountInput>'.
-			'<CurrencyInput>'.$params['currency_code'].'</CurrencyInput>'.
-			'<EmailAddress>'.$params['email'].'</EmailAddress>'.
-			'<MerchantReference>'.$params['reference'].'</MerchantReference>'.
-			'<TxnType>Purchase</TxnType>'.
-			'<UrlSuccess>'.$params['return_url'].'</UrlSuccess>'.
-			'<UrlFail>'.$params['cancel_url'].'</UrlFail>'.
-			'<EnableAddBillCard>'.(int)$this->settings['enable_token_billing'].'</EnableAddBillCard>'.
-			'</GenerateRequest>';
-
-		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
-
-		$xml = simplexml_load_string($response['data']);
-
-		// redirect to hosted payment page
-		if (empty($xml) OR ! isset($xml->attributes()->valid))
-		{
-			return new Merchant_response('failed', 'invalid_response');
-		}
-		elseif ($xml->attributes()->valid == 1)
-		{
-			redirect((string)$xml->URI);
-		}
-		else
-		{
-			return new Merchant_response('failed', (string)$xml->URI);
-		}
+		return $this->_begin_authorize_or_purchase('Auth');
 	}
 
-	public function _process_return()
+	public function authorize_return()
 	{
-		if ($this->CI->input->get('result', TRUE) === FALSE) return new Merchant_response('failed', 'invalid_response');
+		return $this->purchase_return();
+	}
+
+	public function purchase()
+	{
+		return $this->_begin_authorize_or_purchase('Purchase');
+	}
+
+	public function purchase_return()
+	{
+		$result = $this->CI->input->get_post('result');
+		if (empty($result))
+		{
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
+		}
 
 		// validate dps response
-		$request = '<ProcessResponse>'.
-			'<PxPayUserId>'.$this->settings['user_id'].'</PxPayUserId>'.
-			'<PxPayKey>'.$this->settings['key'].'</PxPayKey>'.
-			'<Response>'.$this->CI->input->get('result', TRUE).'</Response>'.
-			'</ProcessResponse>';
+		$request = new SimpleXMLElement('<ProcessResponse></ProcessResponse>');
+		$request->PxPayUserId = $this->setting('user_id');
+		$request->PxPayKey = $this->setting('key');
+		$request->Response = $result;
 
-		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
 
-		$xml = simplexml_load_string($response['data']);
-		if ( ! isset($xml->Success))
+		if ((string)$xml->Success == '1')
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			if ((string)$xml->TxnType == 'Auth')
+			{
+				return new Merchant_response(Merchant_response::AUTHORIZED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+			}
+			elseif ((string)$xml->TxnType == 'Purchase')
+			{
+				return new Merchant_response(Merchant_response::COMPLETE, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+			}
 		}
-		elseif ($xml->Success == '1')
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+	}
+
+	private function _begin_authorize_or_purchase($method)
+	{
+		$this->require_params('return_url');
+
+		$request = new SimpleXMLElement('<GenerateRequest></GenerateRequest>');
+		$request->PxPayUserId = $this->setting('user_id');
+		$request->PxPayKey = $this->setting('key');
+		$request->TxnType = $method;
+		$request->AmountInput = $this->amount_dollars();
+		$request->CurrencyInput = $this->param('currency');
+		$request->MerchantReference = $this->param('description');
+		$request->UrlSuccess = $this->param('return_url');
+		$request->UrlFail = $this->param('return_url');
+		$request->EnableAddBillCard = (int)$this->setting('enable_token_billing');
+
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		$xml = simplexml_load_string($response);
+
+		// redirect to hosted payment page
+		if ((string)$xml['valid'] == '1')
 		{
-			return new Merchant_response('authorized', (string)$xml->ResponseText, (string)$xml->DpsTxnRef, (double)$xml->AmountSettlement);
+			$this->redirect((string)$xml->URI);
 		}
 		else
 		{
-			return new Merchant_response('declined', (string)$xml->ResponseText, (string)$xml->DpsTxnRef);
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 	}
 }

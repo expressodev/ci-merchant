@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,88 +28,71 @@
  * Merchant 2Checkout Class
  *
  * Payment processing using 2Checkout
+ * Documentation: http://www.2checkout.com/documentation/Advanced_User_Guide.pdf
  */
 
 class Merchant_2checkout extends Merchant_driver
 {
-	public $required_fields = array('amount', 'reference', 'currency_code', 'return_url');
-
-	public $settings = array(
-		'account_no' => '',
-		'secret_word' => '',
-		'test_mode' => FALSE
-	);
-
 	const PROCESS_URL = 'https://www.2checkout.com/checkout/purchase';
 
-	public $CI;
-
-	public function __construct($settings = array())
+	public function default_settings()
 	{
-		foreach ($settings as $key => $value)
-		{
-			if(array_key_exists($key, $this->settings))	$this->settings[$key] = $value;
-		}
-		$this->CI =& get_instance();
+		return array(
+			'account_no' => '',
+			'secret_word' => '',
+			'test_mode' => FALSE
+		);
 	}
 
-	public function _process($params)
+	public function purchase()
 	{
+		$this->require_params('order_id', 'return_url');
+
 		// post data to 2checkout
 		$data = array(
-			'sid' => $this->settings['account_no'],
-			'cart_order_id' => $params['reference'],
-			'total' => $params['amount'],
-			'tco_currency' => $params['currency_code'],
+			'sid' => $this->setting('account_no'),
+			'cart_order_id' => $this->param('order_id'),
+			'total' => $this->amount_dollars(),
+			'tco_currency' => $this->param('currency'),
+			'fixed' => 'Y',
 			'skip_landing' => 1,
-      		'x_Receipt_Link_URL' => $params['return_url'],
+			'x_receipt_link_url' => $this->param('return_url'),
+			'card_holder_name' => $this->param('name'),
+			'street_address' => $this->param('address1'),
+			'street_address2' => $this->param('address2'),
+			'city' => $this->param('city'),
+			'state' => $this->param('region'),
+			'zip' => $this->param('postcode'),
+			'country' => $this->param('country'),
+			'phone' => $this->param('phone'),
+			'email' => $this->param('email'),
 		);
 
-		foreach (array(
-			'card_holder_name' => 'card_name',
-			'street_address' => 'address',
-			'street_address2' => 'address2',
-			'city' => 'city',
-			'state' => 'region',
-			'zip' => 'postcode',
-			'country' => 'country',
-			'phone' => 'phone',
-			'email' => 'email') as $key => $field)
-		{
-			if (isset($params[$field]))
-			{
-				$data[$key] = $params[$field];
-			}
-		}
-
-		if ($this->settings['test_mode'])
+		if ($this->setting('test_mode'))
 		{
 			$data['demo'] = 'Y';
 		}
 
-		Merchant::redirect_post(self::PROCESS_URL, $data);
+		$this->redirect(self::PROCESS_URL.'?'.http_build_query($data));
 	}
 
-	public function _process_return()
+	public function purchase_return()
 	{
-		$order_number = $this->CI->input->post('order_number');
-		$order_total = $this->CI->input->post('total');
+		$order_number = $this->CI->input->get_post('order_number');
 
-		if ($this->settings['test_mode'])
+		// strange exception specified by 2Checkout
+		if ($this->setting('test_mode'))
 		{
 			$order_number = '1';
 		}
 
-		$check = strtoupper(md5($this->settings['secret_word'].$this->settings['account_no'].$order_number.$order_total));
+		$key = strtoupper(md5($this->setting('secret_word').$this->setting('account_no').$order_number.$this->amount_dollars()));
+		if ($key == $this->CI->input->get_post('key'))
+		{
+			return new Merchant_response(Merchant_response::COMPLETE, NULL, $order_number);
+		}
 
-		if ($check == $this->CI->input->post('key'))
-		{
-			return new Merchant_response('authorized', '', $this->CI->input->post('order_number'), (float)$order_total);
-		}
-		else
-		{
-			return new Merchant_response('failed', 'invalid_response');
-		}
+		return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 	}
 }
 
