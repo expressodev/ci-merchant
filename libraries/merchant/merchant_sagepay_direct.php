@@ -98,7 +98,6 @@ class Merchant_sagepay_direct extends Merchant_driver
 		$request['CardHolder'] = $this->param('name');
 		$request['CardNumber'] = $this->param('card_no');
 		$request['CV2'] = $this->param('csc');
-		$request['IssueNumber'] = $this->param('card_issue');
 		$request['ExpiryDate'] = $this->param('exp_month').($this->param('exp_year') % 100);
 		$request['ClientIPAddress'] = $this->CI->input->ip_address();
 		$request['CustomerEMail'] = $this->param('email');
@@ -114,6 +113,11 @@ class Merchant_sagepay_direct extends Merchant_driver
 		if ($this->param('start_month') AND $this->param('start_year'))
 		{
 			$request['StartDate'] = $this->param('start_month').($this->param('start_year') % 100);
+		}
+
+		if ($this->param('card_issue'))
+		{
+			$request['IssueNumber'] = $this->param('card_issue');
 		}
 
 		// billing details
@@ -133,6 +137,7 @@ class Merchant_sagepay_direct extends Merchant_driver
 		{
 			$request["Delivery$field"] = $request["Billing$field"];
 		}
+		dump($request);
 
 		return $request;
 	}
