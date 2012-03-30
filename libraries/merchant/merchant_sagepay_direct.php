@@ -137,7 +137,6 @@ class Merchant_sagepay_direct extends Merchant_driver
 		{
 			$request["Delivery$field"] = $request["Billing$field"];
 		}
-		dump($request);
 
 		return $request;
 	}
