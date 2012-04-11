@@ -25,6 +25,7 @@ $lang = array(
 	'merchant_api_login_id'					=> 'API Login ID',
 	'merchant_transaction_key'				=> 'Transaction Key',
 	'merchant_test_mode'					=> 'Test Mode',
+	'merchant_developer_mode'				=> 'Developer Mode',
 	'merchant_simulator_mode'				=> 'Simulator Mode',
 	'merchant_user_id'						=> 'User ID',
 	'merchant_app_id'						=> 'App ID',

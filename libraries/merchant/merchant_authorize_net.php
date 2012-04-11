@@ -41,6 +41,7 @@ class Merchant_authorize_net extends Merchant_driver
 			'api_login_id' => '',
 			'transaction_key' => '',
 			'test_mode' => FALSE,
+			'developer_mode' => FALSE,
 		);
 	}
 
@@ -74,6 +75,11 @@ class Merchant_authorize_net extends Merchant_driver
 		$request['x_card_num'] = $this->param('card_no');
 		$request['x_exp_date'] = $this->param('exp_month').$this->param('exp_year');
 		$request['x_card_code'] = $this->param('csc');
+
+		if ($this->setting('test_mode'))
+		{
+			$request['x_test_request'] = 'TRUE';
+		}
 
 		$this->_add_billing_details($request);
 
@@ -125,7 +131,7 @@ class Merchant_authorize_net extends Merchant_driver
 
 	protected function _process_url()
 	{
-		return $this->setting('test_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
+		return $this->setting('developer_mode') ? self::PROCESS_URL_TEST : self::PROCESS_URL;
 	}
 }
 
