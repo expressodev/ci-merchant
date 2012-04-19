@@ -5,6 +5,7 @@ $lang = array(
 	'merchant_2checkout'					=> '2Checkout',
 	'merchant_authorize_net'				=> 'Authorize.Net AIM',
 	'merchant_authorize_net_sim'			=> 'Authorize.Net SIM',
+	'merchant_cardsave'						=> 'Cardsave',
 	'merchant_dps_pxpay'					=> 'DPS PaymentExpress PxPay',
 	'merchant_dps_pxpost'					=> 'DPS PaymentExpress PxPost',
 	'merchant_dummy'						=> 'Dummy',
