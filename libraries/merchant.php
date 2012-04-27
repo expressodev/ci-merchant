@@ -41,6 +41,15 @@ class Merchant
 {
 	public static $CURRENCIES_WITHOUT_DECIMALS = array('JPY');
 
+	public static $NUMERIC_CURRENCY_CODES = array(
+		'AUD' => '036',
+		'CAD' => '124',
+		'EUR' => '978',
+		'GBP' => '826',
+		'NZD' => '554',
+		'USD' => '840',
+	);
+
 	private $_driver;
 
 	public function __construct($driver = NULL)
@@ -606,6 +615,17 @@ abstract class Merchant_driver
 		}
 
 		return round($this->param('amount') * 100);
+	}
+
+	protected function currency()
+	{
+		return $this->param('currency');
+	}
+
+	protected function currency_numeric()
+	{
+		$code = $this->param('currency');
+		return isset(Merchant::$NUMERIC_CURRENCY_CODES[$code]) ? Merchant::$NUMERIC_CURRENCY_CODES[$code] : 0;
 	}
 
 	/**

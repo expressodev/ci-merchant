@@ -81,6 +81,11 @@ class Merchant_authorize_net_sim extends Merchant_authorize_net
 		$request['x_relay_url'] = $this->param('return_url');
 		$request['x_cancel_url'] = $this->param('cancel_url');
 
+		if ($this->setting('test_mode'))
+		{
+			$request['x_test_request'] = 'TRUE';
+		}
+
 		return $request;
 	}
 

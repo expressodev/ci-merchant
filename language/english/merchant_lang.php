@@ -10,12 +10,14 @@ $lang = array(
 	'merchant_dummy'						=> 'Dummy',
 	'merchant_eway'							=> 'eWay Hosted',
 	'merchant_eway_shared'					=> 'eWay Shared',
+	'merchant_ideal'						=> 'iDEAL',
 	'merchant_inipay'						=> 'INIpay',
 	'merchant_gocardless'					=> 'GoCardless',
 	'merchant_manual'						=> 'Manual',
 	'merchant_ogone_directlink'				=> 'Ogone DirectLink',
 	'merchant_payflow_pro'					=> 'Payflow Pro',
-	'merchant_paypal'						=> 'Paypal',
+	'merchant_paypal'						=> 'Paypal Standard',
+	'merchant_paypal_express'				=> 'Paypal Express Checkout',
 	'merchant_paypal_pro'					=> 'Paypal Pro',
 	'merchant_sagepay_direct'				=> 'Sagepay Direct',
 	'merchant_stripe'						=> 'Stripe',
@@ -25,6 +27,7 @@ $lang = array(
 	'merchant_api_login_id'					=> 'API Login ID',
 	'merchant_transaction_key'				=> 'Transaction Key',
 	'merchant_test_mode'					=> 'Test Mode',
+	'merchant_developer_mode'				=> 'Developer Mode',
 	'merchant_simulator_mode'				=> 'Simulator Mode',
 	'merchant_user_id'						=> 'User ID',
 	'merchant_app_id'						=> 'App ID',
@@ -53,6 +56,10 @@ $lang = array(
 	'merchant_page_footer'					=> 'Page Footer',
 	'merchant_enable_token_billing'			=> 'Store card details for token billing',
 	'merchant_paypal_email'					=> 'PayPal Account Email',
+	'merchant_acquirer_url'					=> 'Acquirer URL',
+	'merchant_public_key_path'				=> 'Public Key Server Path',
+	'merchant_private_key_path'				=> 'Private Key Server Path',
+	'merchant_private_key_password'			=> 'Private Key Password',
 
 	// payment gateway fields
 	'merchant_card_type'					=> 'Card Type',
@@ -66,6 +73,7 @@ $lang = array(
 	'merchant_start_month'					=> 'Start Month',
 	'merchant_start_year'					=> 'Start Year',
 	'merchant_csc'							=> 'CSC',
+	'merchant_issuer'						=> 'Issuer',
 
 	// status/error messages
 	'merchant_insecure_connection'			=> 'Card details must be submitted over a secure connection.',
