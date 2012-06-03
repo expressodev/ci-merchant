@@ -4,7 +4,7 @@
 
  * CodeIgniter 2.0+
 
-### Supported Payment Gateways
+## Supported Payment Gateways
 
  * 2Checkout
  * Authorize.net AIM
@@ -24,7 +24,7 @@
  * Stripe
  * WorldPay
 
-### Quick Start
+## Quick Start
 
 	// load the merchant library
 	$this->load->library('merchant');
@@ -48,6 +48,6 @@
 	// process return from payment gateway (hosted payment gateways only)
 	$this->merchant->purchase_return($params);
 
-### License
+## License
 
 CI Merchant is released under the MIT License. For more information, see [License](https://github.com/expressodev/ci-merchant/blob/develop/LICENSE.md).
