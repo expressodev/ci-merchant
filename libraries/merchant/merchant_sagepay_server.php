@@ -32,7 +32,7 @@ require_once(MERCHANT_DRIVER_PATH.'/merchant_sagepay_base.php');
  * Payment processing using SagePay Direct
  */
 
-class Merchant_sagepay_direct extends Merchant_sagepay_base
+class Merchant_sagepay_server extends Merchant_sagepay_base
 {
 	public function authorize()
 	{
@@ -42,7 +42,7 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 
 	public function authorize_return()
 	{
-		return $this->_direct3d_return(Merchant_response::AUTHORIZED);
+		return $this->purchase_return();
 	}
 
 	public function purchase()
@@ -51,40 +51,49 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 		return $this->_submit_request($request);
 	}
 
-	/**
-	 * Only used for returning from Direct 3D Authentication
-	 */
-	public function purchase_return()
+	public function purchase_return($redirect_url)
 	{
-		return $this->_direct3d_return(Merchant_response::COMPLETE);
+		file_put_contents(MERCHANT_DRIVER_PATH.'/sagepay.log', print_r($_POST, true));
+
+		switch ($this->CI->input->post('TxType'))
+		{
+			case 'PAYMENT':
+				$success_status = Merchant_response::COMPLETE;
+				break;
+			case 'DEFERRED':
+				$success_status = Merchant_response::AUTHORIZED;
+				break;
+			default:
+				echo "Status=INVALID";
+				exit;
+		}
+
+		// TODO: check VPSSignature
+
+		// return response (script must call confirm_return() after processing)
+		return new Merchant_sagepay_response($_POST, $success_status);
+	}
+
+	/**
+	 * Because Sage Pay does things backwards compared to every other gateway
+	 * (the confirm url is called by their server, not the customer),
+	 * after calling purchase_return() and recording the success/failure, the calling
+	 * script must end with a call to this method, to let Sage Pay know that the message
+	 * was received successfully, and where to send the customer.
+	 */
+	public function confirm_return($redirect_url)
+	{
+		echo "Status=OK\r\n";
+		echo "RedirectUrl=".$redirect_url;
+		exit;
 	}
 
 	protected function _build_authorize_or_purchase($method)
 	{
-		$this->require_params('card_no', 'name', 'card_type', 'exp_month', 'exp_year', 'csc');
+		$this->require_params('return_url');
 
 		$request = parent::_build_authorize_or_purchase($method);
-
-		$request['CardHolder'] = $this->param('name');
-		$request['CardNumber'] = $this->param('card_no');
-		$request['CV2'] = $this->param('csc');
-		$request['ExpiryDate'] = $this->param('exp_month').($this->param('exp_year') % 100);
-
-		$request['CardType'] = strtoupper($this->param('card_type'));
-		if ($request['CardType'] == 'MASTERCARD')
-		{
-			$request['CardType'] = 'MC';
-		}
-
-		if ($this->param('start_month') AND $this->param('start_year'))
-		{
-			$request['StartDate'] = $this->param('start_month').($this->param('start_year') % 100);
-		}
-
-		if ($this->param('card_issue'))
-		{
-			$request['IssueNumber'] = $this->param('card_issue');
-		}
+		$request['NotificationURL'] = $this->param('return_url');
 
 		return $request;
 	}
@@ -94,7 +103,7 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 		$service = strtolower($service);
 		if ($service == 'payment' OR $service == 'deferred')
 		{
-			$service = 'vspdirect-register';
+			$service = 'vspserver-register';
 		}
 
 		return parent::_process_url($service);

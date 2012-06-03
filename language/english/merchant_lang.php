@@ -20,6 +20,7 @@ $lang = array(
 	'merchant_paypal_express'				=> 'Paypal Express Checkout',
 	'merchant_paypal_pro'					=> 'Paypal Pro',
 	'merchant_sagepay_direct'				=> 'Sagepay Direct',
+	'merchant_sagepay_server'				=> 'Sagepay Server',
 	'merchant_stripe'						=> 'Stripe',
 	'merchant_worldpay'						=> 'WorldPay',
 
