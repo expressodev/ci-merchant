@@ -50,4 +50,4 @@
 
 ### License
 
-You are free to use this code under the terms of the MIT License. See LICENSE.md for further details.
+CI Merchant is released under the MIT License. For more information, see [License](https://github.com/expressodev/ci-merchant/blob/develop/LICENSE.md).
