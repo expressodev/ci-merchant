@@ -22,6 +22,7 @@ $lang = array(
 	'merchant_sagepay_direct'				=> 'Sagepay Direct',
 	'merchant_sagepay_server'				=> 'Sagepay Server',
 	'merchant_stripe'						=> 'Stripe',
+	'merchant_webteh_direct'				=> 'Webteh Direct',
 	'merchant_worldpay'						=> 'WorldPay',
 
 	// payment gateway settings
