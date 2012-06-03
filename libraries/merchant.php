@@ -589,6 +589,10 @@ abstract class Merchant_driver
 	 */
 	protected function secure_request()
 	{
+		if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) AND $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')
+		{
+			return TRUE;
+		}
 		if (empty($_SERVER['HTTPS']) OR strtolower($_SERVER['HTTPS']) == 'off')
 		{
 			return FALSE;
