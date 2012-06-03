@@ -1,12 +1,11 @@
-CI Merchant Library
-===================
+# CI Merchant Library
 
-Requirements
-------------
+## Requirements
+
  * CodeIgniter 2.0+
 
-Supported Payment Gateways
---------------------------
+### Supported Payment Gateways
+
  * 2Checkout
  * Authorize.net AIM
  * Authorize.net SIM
@@ -25,8 +24,7 @@ Supported Payment Gateways
  * Stripe
  * WorldPay
 
-Quick Start
------------
+### Quick Start
 
 	// load the merchant library
 	$this->load->library('merchant');
@@ -50,7 +48,6 @@ Quick Start
 	// process return from payment gateway (hosted payment gateways only)
 	$this->merchant->purchase_return($params);
 
-License
--------
+### License
 
-You are free to use this code under the terms of the MIT License. See LICENSE.txt for further details.
+You are free to use this code under the terms of the MIT License. See LICENSE.md for further details.

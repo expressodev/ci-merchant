@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
