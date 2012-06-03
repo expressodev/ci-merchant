@@ -42,7 +42,7 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 
 	public function authorize_return()
 	{
-		return $this->_direct3d_return(Merchant_response::AUTHORIZED);
+		return $this->_direct3d_return('DEFERRED');
 	}
 
 	public function purchase()
@@ -56,7 +56,7 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 	 */
 	public function purchase_return()
 	{
-		return $this->_direct3d_return(Merchant_response::COMPLETE);
+		return $this->_direct3d_return('PAYMENT');
 	}
 
 	protected function _build_authorize_or_purchase($method)
@@ -87,6 +87,28 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 		}
 
 		return $request;
+	}
+
+	protected function _direct3d_return($TxType)
+	{
+		$data = array(
+			'MD' => $this->CI->input->post('MD'),
+			'PARes' => $this->CI->input->post('PaRes'), // inconsistent caps are intentional
+		);
+
+		if (empty($data['MD']) OR empty($data['PARes']))
+		{
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
+		}
+
+		$response = $this->post_request($this->_process_url('direct3dcallback'), $data);
+		$response = $this->_decode_response($response);
+
+		// add the TxType and VendorTxCode so we can use them in the response class
+		$response['TxType'] = $TxType;
+		$response['VendorTxCode'] = $this->param('transaction_id');
+
+		return new Merchant_sagepay_response($response);
 	}
 
 	protected function _process_url($service)

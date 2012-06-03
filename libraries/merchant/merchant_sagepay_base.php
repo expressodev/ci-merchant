@@ -147,44 +147,14 @@ abstract class Merchant_sagepay_base extends Merchant_driver
 		$response = $this->post_request($process_url, $request);
 		$response = $this->_decode_response($response);
 
-		// do we need to redirect to hosted payment page?
-		if ( ! empty($response['NextURL']))
-		{
-			$this->redirect($response['NextURL']);
-		}
-
-		// do we need to redirect for 3D authentication?
-		if (isset($response['Status']) AND $response['Status'] == '3DAUTH')
-		{
-			$data = array(
-				'PaReq' => $response['PAReq'],
-				'TermUrl' => $this->param('return_url'),
-				'MD' => $response['MD'],
-			);
-
-			$this->post_redirect($response['ACSURL'], $data, lang('merchant_3dauth_redirect'));
-		}
-
-		// record the VendorTxCode so we can use it for capture/refunds
+		// record the request TxType and VendorTxCode so we can use them in the response class
+		$response['TxType'] = $request['TxType'];
 		$response['VendorTxCode'] = $request['VendorTxCode'];
 
-		switch ($request['TxType'])
-		{
-			case 'DEFERRED':
-				$success_status = Merchant_response::AUTHORIZED;
-				break;
-			case 'RELEASE':
-				$success_status = Merchant_response::COMPLETE;
-				break;
-			case 'PAYMENT':
-				$success_status = Merchant_response::COMPLETE;
-				break;
-			case 'REFUND':
-				$success_status = Merchant_response::REFUNDED;
-				break;
-		}
+		// TermUrl is only needed for 3DAUTH redirects
+		$response['TermUrl'] = $this->param('return_url');
 
-		return new Merchant_sagepay_response($response, $success_status);
+		return new Merchant_sagepay_response($response);
 	}
 
 	protected function _process_url($service)
@@ -216,27 +186,6 @@ abstract class Merchant_sagepay_base extends Merchant_driver
 		return self::PROCESS_URL."/$service.vsp";
 	}
 
-	protected function _direct3d_return($success_status)
-	{
-		$data = array(
-			'MD' => $this->CI->input->post('MD'),
-			'PARes' => $this->CI->input->post('PaRes'), // inconsistent caps are intentional
-		);
-
-		if (empty($data['MD']) OR empty($data['PARes']))
-		{
-			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
-		}
-
-		$response = $this->post_request($this->_process_url('direct3dcallback'), $data);
-		$response = $this->_decode_response($response);
-
-		// record the VendorTxCode so we can use it for capture/refunds
-		$response['VendorTxCode'] = $this->param('transaction_id');
-
-		return new Merchant_sagepay_response($response, $success_status);
-	}
-
 	/**
 	 * Convert ini-style response into a useful array
 	 */
@@ -258,51 +207,100 @@ abstract class Merchant_sagepay_base extends Merchant_driver
 	}
 
 	/**
-	 * Decode transaction references stored in our custom format
-	 * VendorTxCode;VPSTxId;SecurityKey;TxAuthNo
+	 * Decode transaction references, either stored as JSON,
+	 * or in our old custom format (VendorTxCode;VPSTxId;SecurityKey;TxAuthNo)
 	 */
 	protected function _decode_reference($reference)
 	{
-		$reference = explode(';', $reference);
-
-		return (object)array(
-			'VendorTxCode' => isset($reference[0]) ? $reference[0] : NULL,
-			'VPSTxId' => isset($reference[1]) ? $reference[1] : NULL,
-			'SecurityKey' => isset($reference[2]) ? $reference[2] : NULL,
-			'TxAuthNo' => isset($reference[3]) ? $reference[3] : NULL,
-		);
+		// is first character a brace?
+		if (strpos($reference, '{') === 0)
+		{
+			return (object)json_decode($reference, true);
+		}
+		else
+		{
+			$reference = explode(';', $reference);
+			return (object)array(
+				'VendorTxCode' => isset($reference[0]) ? $reference[0] : NULL,
+				'VPSTxId' => isset($reference[1]) ? $reference[1] : NULL,
+				'SecurityKey' => isset($reference[2]) ? $reference[2] : NULL,
+				'TxAuthNo' => isset($reference[3]) ? $reference[3] : NULL,
+			);
+		}
 	}
 }
 
 class Merchant_sagepay_response extends Merchant_response
 {
-	protected $_response;
-
-	public function __construct($response, $success_status)
+	public function __construct($response)
 	{
 		// init expected fields to avoid php errors
-		$this->_response = array_merge(array(
+		$this->_data = array_merge(array(
 			'Status' => NULL,
 			'StatusDetail' => NULL,
 			'VendorTxCode' => NULL,
 			'VPSTxId' => NULL,
 			'SecurityKey' => NULL,
+			'TxType' => NULL,
 			'TxAuthNo' => NULL,
 		), $response);
 
-		$this->_message = $this->_response['StatusDetail'];
+		$this->_message = $this->_data['StatusDetail'];
 
-		if ($this->_response['Status'] == 'OK')
+		// do we need to redirect for 3D authentication?
+		if ($this->_data['Status'] == '3DAUTH')
 		{
-			$this->_status = $success_status;
-
-			if ($this->_response['VPSTxId'])
+			$this->_status = self::REDIRECT;
+			$this->_redirect_url = $this->_data['ACSURL'];
+			$this->_redirect_method = 'POST';
+			$this->_redirect_message = lang('merchant_3dauth_redirect');
+			$this->_redirect_data = array(
+				'PaReq' => $this->_data['PAReq'],
+				'TermUrl' => $this->_data['TermUrl'],
+				'MD' => $this->_data['MD'],
+			);
+		}
+		elseif ($this->_data['Status'] == 'OK')
+		{
+			// record gateway reference
+			if ($this->_data['VPSTxId'])
 			{
-				$this->_reference = implode(';', array(
-					$this->_response['VendorTxCode'],
-					$this->_response['VPSTxId'],
-					$this->_response['SecurityKey'],
-					$this->_response['TxAuthNo']));
+				$this->_reference = json_encode(array(
+					'VendorTxCode' => $this->_data['VendorTxCode'],
+					'VPSTxId' => $this->_data['VPSTxId'],
+					'SecurityKey' => $this->_data['SecurityKey'],
+					'TxAuthNo' => $this->_data['TxAuthNo']
+				));
+			}
+
+			if ( ! empty($this->_data['NextURL']))
+			{
+				// using server method, please save reference then redirect
+				$this->_status = self::REDIRECT;
+				$this->_redirect_url = $this->_data['NextURL'];
+			}
+			else
+			{
+				// successful response, no redirect
+				switch ($this->_data['TxType'])
+				{
+					case 'DEFERRED':
+						$this->_status = self::AUTHORIZED;
+						break;
+					case 'RELEASE':
+						$this->_status = self::COMPLETE;
+						break;
+					case 'PAYMENT':
+						$this->_status = self::COMPLETE;
+						break;
+					case 'REFUND':
+						$this->_status = self::REFUNDED;
+						break;
+					default:
+						// how did this happen?
+						$this->_status = self::FAILED;
+						break;
+				}
 			}
 		}
 		else

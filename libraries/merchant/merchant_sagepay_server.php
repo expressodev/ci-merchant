@@ -53,30 +53,44 @@ class Merchant_sagepay_server extends Merchant_sagepay_base
 
 	public function purchase_return($redirect_url)
 	{
-		file_put_contents(MERCHANT_DRIVER_PATH.'/sagepay.log', print_r($_POST, true));
+		$reference = $this->_decode_reference($this->param('reference'));
 
-		switch ($this->CI->input->post('TxType'))
+		// validate VPSSignature
+		@$signature = md5(
+			$reference->VPSTxId.
+			$reference->VendorTxCode.
+			$_POST['Status'].
+			$_POST['TxAuthNo'].
+			$this->setting('vendor').
+			$_POST['AVSCV2'].
+			$reference->SecurityKey.
+			$_POST['AddressResult'].
+			$_POST['PostCodeResult'].
+			$_POST['CV2Result'].
+			$_POST['GiftAid'].
+			$_POST['3DSecureStatus'].
+			$_POST['CAVV'].
+			$_POST['AddressStatus'].
+			$_POST['PayerStatus'].
+			$_POST['CardType'].
+			$_POST['Last4Digits']);
+
+		if (strtolower($_POST['VPSSignature']) == $signature)
 		{
-			case 'PAYMENT':
-				$success_status = Merchant_response::COMPLETE;
-				break;
-			case 'DEFERRED':
-				$success_status = Merchant_response::AUTHORIZED;
-				break;
-			default:
-				echo "Status=INVALID";
-				exit;
+			// add SecurityKey to response so we can record it with the payment
+			$_POST['SecurityKey'] = $reference->SecurityKey;
+
+			return new Merchant_sagepay_response($_POST);
 		}
 
-		// TODO: check VPSSignature
-
-		// return response (script must call confirm_return() after processing)
-		return new Merchant_sagepay_response($_POST, $success_status);
+		echo "Status=INVALID";
+		exit;
 	}
 
 	/**
 	 * Because Sage Pay does things backwards compared to every other gateway
-	 * (the confirm url is called by their server, not the customer),
+	 * (the confirm url is called by their server, not the customer, and doesn't send a
+	 * separate post back to Sage Pay to confirm the payment),
 	 * after calling purchase_return() and recording the success/failure, the calling
 	 * script must end with a call to this method, to let Sage Pay know that the message
 	 * was received successfully, and where to send the customer.
