@@ -5,6 +5,26 @@ Requirements
 ------------
  * CodeIgniter 2.0+
 
+Supported Payment Gateways
+--------------------------
+ * 2Checkout
+ * Authorize.net AIM
+ * Authorize.net SIM
+ * DPS PaymentExpress PxPay
+ * DPS PaymentExpress PxPost
+ * Dummy (for testing purposes)
+ * eWay Hosted
+ * eWay Shared
+ * GoCardless
+ * Manual (for supporting check / bank transfers)
+ * Payflow Pro
+ * Paypal Express Checkout
+ * Paypal Pro
+ * Sage Pay Direct
+ * Sage Pay Server
+ * Stripe
+ * WorldPay
+
 Quick Start
 -----------
 
