@@ -29,8 +29,9 @@
 // This will be removed in a future version!
 if ( ! class_exists('CI_Driver')) get_instance()->load->library('driver');
 
-define('MERCHANT_VENDOR_PATH', realpath(dirname(__FILE__).'/../vendor'));
+define('MERCHANT_CONFIG_PATH', realpath(dirname(__FILE__).'/../config'));
 define('MERCHANT_DRIVER_PATH', realpath(dirname(__FILE__).'/merchant'));
+define('MERCHANT_VENDOR_PATH', realpath(dirname(__FILE__).'/../vendor'));
 
 /**
  * Merchant Class
@@ -714,7 +715,9 @@ abstract class Merchant_driver
 	{
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // don't check client certificate
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+		curl_setopt($ch, CURLOPT_CAINFO, MERCHANT_CONFIG_PATH.'/cacert.pem');
 
 		if ($username !== NULL)
 		{
