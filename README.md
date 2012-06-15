@@ -15,6 +15,7 @@
  * eWay Hosted
  * eWay Shared
  * GoCardless
+ * iDEAL
  * Manual (for supporting check / bank transfers)
  * Payflow Pro
  * Paypal Express Checkout
