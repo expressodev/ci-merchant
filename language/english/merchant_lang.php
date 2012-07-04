@@ -5,6 +5,9 @@ $lang = array(
 	'merchant_2checkout'					=> '2Checkout',
 	'merchant_authorize_net'				=> 'Authorize.Net AIM',
 	'merchant_authorize_net_sim'			=> 'Authorize.Net SIM',
+	'merchant_buckaroo'						=> 'Buckaroo (Credit Card)',
+	'merchant_buckaroo_ideal'				=> 'Buckaroo (iDEAL)',
+	'merchant_buckaroo_paypal'				=> 'Buckaroo (PayPal)',
 	'merchant_dps_pxpay'					=> 'DPS PaymentExpress PxPay',
 	'merchant_dps_pxpost'					=> 'DPS PaymentExpress PxPost',
 	'merchant_dummy'						=> 'Dummy',
@@ -78,6 +81,7 @@ $lang = array(
 
 	// status/error messages
 	'merchant_insecure_connection'			=> 'Card details must be submitted over a secure connection.',
+	'merchant_failed'						=> 'Transaction failed.',
 	'merchant_required'						=> 'The %s field is required.',
 	'merchant_invalid_card_no'				=> 'Card Number is invalid.',
 	'merchant_card_expired'					=> 'Card has expired.',
