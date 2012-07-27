@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,56 +28,114 @@
  * Merchant DPS PxPost Class
  *
  * Payment processing using DPS PaymentExpress PxPost
+ * Documentation: http://www.paymentexpress.com/technical_resources/ecommerce_nonhosted/pxpost.html
  */
 
 class Merchant_dps_pxpost extends Merchant_driver
 {
 	const PROCESS_URL = 'https://sec.paymentexpress.com/pxpost.aspx';
 
-	public $required_fields = array('amount', 'card_no', 'card_name', 'exp_month', 'exp_year', 'csc', 'currency_code', 'transaction_id', 'reference');
-
-	public $settings = array(
-		'username' => '',
-		'password' => '',
-		'enable_token_billing' => FALSE,
-	);
-
-	public function _process($params)
+	public function default_settings()
 	{
-		$date_expiry = $params['exp_month'];
-		$date_expiry .= $params['exp_year'] % 100;
+		return array(
+			'username' => '',
+			'password' => '',
+			'enable_token_billing' => FALSE,
+		);
+	}
 
-		$request = '<Txn>'.
-				'<PostUsername>'.$this->settings['username'].'</PostUsername>'.
-				'<PostPassword>'.$this->settings['password'].'</PostPassword>'.
-				'<CardHolderName>'.htmlspecialchars($params['card_name']).'</CardHolderName>'.
-				'<CardNumber>'.$params['card_no'].'</CardNumber>'.
-				'<Amount>'.sprintf('%01.2f', $params['amount']).'</Amount>'.
-				'<DateExpiry>'.$date_expiry.'</DateExpiry>'.
-				'<Cvc2>'.$params['csc'].'</Cvc2>'.
-				'<InputCurrency>'.$params['currency_code'].'</InputCurrency>'.
-				'<TxnType>Purchase</TxnType>'.
-				'<TxnId>'.$params['transaction_id'].'</TxnId>'.
-				'<MerchantReference>'.$params['reference'].'</MerchantReference>'.
-				'<EnableAddBillCard>'.(int)$this->settings['enable_token_billing'].'</EnableAddBillCard>'.
-			'</Txn>';
+	public function authorize()
+	{
+		$request = $this->_build_authorize_or_purchase('Auth');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		return new Merchant_dps_pxpost_response($response);
+	}
 
-		$response = Merchant::curl_helper(self::PROCESS_URL, $request);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+	public function capture()
+	{
+		$request = $this->_build_capture_or_refund('Complete');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		return new Merchant_dps_pxpost_response($response);
+	}
 
-		$xml = simplexml_load_string($response['data']);
+	public function purchase()
+	{
+		$request = $this->_build_authorize_or_purchase('Purchase');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		return new Merchant_dps_pxpost_response($response);
+	}
 
-		if ( ! isset($xml->Success))
+	public function refund()
+	{
+		$request = $this->_build_capture_or_refund('Refund');
+		$response = $this->post_request(self::PROCESS_URL, $request->asXML());
+		return new Merchant_dps_pxpost_response($response);
+	}
+
+	private function _build_authorize_or_purchase($method)
+	{
+		$this->require_params('card_no', 'name', 'exp_month', 'exp_year', 'csc');
+
+		$request = new SimpleXMLElement('<Txn></Txn>');
+		$request->PostUsername = $this->setting('username');
+		$request->PostPassword = $this->setting('password');
+		$request->TxnType = $method;
+		$request->CardNumber = $this->param('card_no');
+		$request->CardHolderName = $this->param('name');
+		$request->Amount = $this->amount_dollars();
+		$request->DateExpiry = $this->param('exp_month').($this->param('exp_year') % 100);
+		$request->Cvc2 = $this->param('csc');
+		$request->InputCurrency = $this->param('currency');
+		$request->MerchantReference = $this->param('description');
+		$request->EnableAddBillCard = (int)$this->setting('enable_token_billing');
+
+		return $request;
+	}
+
+	private function _build_capture_or_refund($method)
+	{
+		$this->require_params('reference', 'amount');
+
+		$request = new SimpleXMLElement('<Txn></Txn>');
+		$request->PostUsername = $this->setting('username');
+		$request->PostPassword = $this->setting('password');
+		$request->TxnType = $method;
+		$request->DpsTxnRef = $this->param('reference');
+		$request->Amount = $this->amount_dollars();
+
+		return $request;
+	}
+}
+
+class Merchant_dps_pxpost_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response)
+	{
+		$this->_response = simplexml_load_string($response);
+
+		$this->_status = self::FAILED;
+		$this->_message = (string)$this->_response->HelpText;
+		$this->_reference = (string)$this->_response->DpsTxnRef;
+
+		if ((string)$this->_response->Success == '1')
 		{
-			return new Merchant_response('failed', 'invalid_response');
-		}
-		elseif ($xml->Success == '1')
-		{
-			return new Merchant_response('authorized', (string)$xml->HelpText, (string)$xml->DpsTxnRef, (string)$xml->Transaction->Amount);
-		}
-		else
-		{
-			return new Merchant_response('declined', (string)$xml->HelpText, (string)$xml->DpsTxnRef);
+			switch ((string)$this->_response->Transaction->TxnType)
+			{
+				case 'Auth':
+					$this->_status = self::AUTHORIZED;
+					break;
+				case 'Complete':
+					$this->_status = self::COMPLETE;
+					break;
+				case 'Purchase':
+					$this->_status = self::COMPLETE;
+					break;
+				case 'Refund':
+					$this->_status = self::REFUNDED;
+					break;
+			}
 		}
 	}
 }

@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,41 +27,78 @@
 /**
  * Merchant Stripe Class
  *
- * Payment processing using Stripe (https://stripe.com/)
+ * Payment processing using Stripe
+ * Documentation: https://stripe.com/docs/api
  */
 
 class Merchant_stripe extends Merchant_driver
 {
-	const API_ENDPOINT = 'https://api.stripe.com';
+	const PROCESS_URL = 'https://api.stripe.com';
 
-	public $required_fields = array('amount', 'token', 'currency_code', 'reference');
-
-	public $settings = array(
-		'api_key' => '',
-	);
-
-	public function _process($params)
+	public function default_settings()
 	{
-		$request = array(
-			'amount' => (int)($params['amount'] * 100),
-			'card' => $params['token'],
-			'currency' => strtolower($params['currency_code']),
-			'description' => $params['reference'],
+		return array(
+			'api_key' => '',
 		);
+	}
 
-		$response = Merchant::curl_helper(self::API_ENDPOINT.'/v1/charges', $request, $this->settings['api_key']);
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+	public function purchase()
+	{
+		$this->require_params('token');
 
-		$data = json_decode($response['data']);
-		if (isset($data->error))
+		$request = array();
+		$request['amount'] = $this->amount_cents();
+		$request['card'] = $this->param('token');
+		$request['currency'] = strtolower($this->param('currency'));
+		$request['description'] = $this->param('description');
+
+		$process_url = self::PROCESS_URL.'/v1/charges';
+		$response = $this->post_request($process_url, $request, $this->setting('api_key'));
+		return new Merchant_stripe_response($response);
+	}
+
+	public function refund()
+	{
+		$this->require_params('reference', 'amount');
+
+		$request = array('amount' => $this->amount_cents());
+
+		$process_url = self::PROCESS_URL.'/v1/charges/'.$this->param('reference').'/refund';
+		$response = $this->post_request($process_url, $request, $this->setting('api_key'));
+		return new Merchant_stripe_response($response);
+	}
+}
+
+class Merchant_stripe_response extends Merchant_response
+{
+	protected $_response;
+
+	public function __construct($response)
+	{
+		$this->_response = json_decode($response);
+
+		if (empty($this->_response))
 		{
-			return new Merchant_response('declined', $data->error->message);
+			$this->_status = self::FAILED;
+			$this->_message = lang('merchant_invalid_response');
+		}
+		elseif (isset($this->_response->error))
+		{
+			$this->_status = self::FAILED;
+			$this->_message = $this->_response->error->message;
+		}
+		elseif ($this->_response->refunded)
+		{
+			$this->_status = self::REFUNDED;
+			$this->_reference = $this->_response->id;
 		}
 		else
 		{
-			return new Merchant_response('authorized', '', $data->id, $data->amount / 100);
+			$this->_status = self::COMPLETE;
+			$this->_reference = $this->_response->id;
 		}
 	}
 }
+
 
 /* End of file ./libraries/merchant/drivers/merchant_stripe.php */

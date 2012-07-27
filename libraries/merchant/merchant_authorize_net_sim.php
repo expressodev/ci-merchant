@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,105 +30,110 @@
  * Payment processing using Authorize.net SIM (hosted)
  */
 
-class Merchant_authorize_net_sim extends Merchant_driver
+require_once(MERCHANT_DRIVER_PATH.'/merchant_authorize_net.php');
+
+class Merchant_authorize_net_sim extends Merchant_authorize_net
 {
-	public $settings = array(
-		'api_login_id' => '',
-		'transaction_key' => '',
-		'test_mode' => FALSE,
-	);
-
-	public $required_fields = array('amount', 'reference', 'return_url');
-
-	const PROCESS_URL = 'https://secure.authorize.net/gateway/transact.dll';
-	const PROCESS_URL_TEST = 'https://test.authorize.net/gateway/transact.dll';
-
-	public $CI;
-
-	public function __construct()
+	public function authorize()
 	{
-		$this->CI =& get_instance();
-		require_once MERCHANT_VENDOR_PATH.'/AuthorizeNet/AuthorizeNet.php';
+		$request = $this->_build_authorize_or_purchase_form('AUTH_ONLY');
+		$this->post_redirect($this->_process_url(), $request);
 	}
 
-	public function _process($params)
+	public function authorize_return()
 	{
-		$fp_sequence = $params['reference'];
-		$time = time();
+		return $this->_decode_response('AUTH_ONLY');
+	}
 
-		$fingerprint = AuthorizeNetSIM_Form::getFingerprint(
-			$this->settings['api_login_id'],
-			$this->settings['transaction_key'],
-			$params['amount'],
-			$fp_sequence,
-			$time
-		);
+	public function purchase()
+	{
+		$request = $this->_build_authorize_or_purchase_form('AUTH_CAPTURE');
+		$this->post_redirect($this->_process_url(), $request);
+	}
 
-		$data = array(
-			'x_amount' => $params['amount'],
-			'x_delim_data' => 'FALSE',
-			'x_fp_sequence' => $fp_sequence,
-			'x_fp_hash' => $fingerprint,
-			'x_fp_timestamp' => $time,
-			'x_invoice_num' => $params['reference'],
-			'x_relay_response' => 'TRUE',
-			'x_relay_url' => $params['return_url'],
-			'x_login' => $this->settings['api_login_id'],
-			'x_show_form' => 'PAYMENT_FORM',
-			'x_customer_ip' => $this->CI->input->ip_address(),
-		);
+	public function purchase_return()
+	{
+		return $this->_decode_response('AUTH_CAPTURE');
+	}
 
-		// set extra billing details if we have them
-		if (isset($params['card_name']))
+	protected function _build_authorize_or_purchase_form($method)
+	{
+		$request = $this->_new_sim_request($method);
+		$this->_add_billing_details($request);
+
+		$request['x_fp_hash'] = $this->_generate_hash($request);
+
+		return $request;
+	}
+
+	protected function _new_sim_request($method)
+	{
+		$this->require_params('return_url');
+
+		$request = array();
+		$request['x_login'] = $this->setting('api_login_id');
+		$request['x_type'] = $method;
+		$request['x_fp_sequence'] = mt_rand();
+		$request['x_fp_timestamp'] = gmmktime();
+		$request['x_delim_data'] = 'FALSE';
+		$request['x_show_form'] = 'PAYMENT_FORM';
+		$request['x_relay_response'] = 'TRUE';
+		$request['x_relay_url'] = $this->param('return_url');
+		$request['x_cancel_url'] = $this->param('cancel_url');
+
+		if ($this->setting('test_mode'))
 		{
-			$names = explode(' ', $params['card_name'], 2);
-			$data['x_first_name'] = $names[0];
-			$data['x_last_name'] = isset($names[1]) ? $names[1] : '';
+			$request['x_test_request'] = 'TRUE';
 		}
 
-		if (isset($params['address']) AND isset($params['address2']))
+		return $request;
+	}
+
+	protected function _generate_hash($request)
+	{
+		$fingerprint = implode('^', array(
+			$this->setting('api_login_id'),
+			$request['x_fp_sequence'],
+			$request['x_fp_timestamp'],
+			$request['x_amount'])).'^';
+
+		return hash_hmac('md5', $fingerprint, $this->setting('transaction_key'));
+	}
+
+	protected function _decode_response($method)
+	{
+		if ( ! $this->_validate_return_hash())
 		{
-			$params['address'] = trim($params['address']." \n".$params['address2']);
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
-		foreach (array(
-			'x_company' => 'company',
-			'x_address' => 'address',
-			'x_city' => 'city',
-			'x_state' => 'region',
-			'x_zip' => 'postcode',
-			'x_country' => 'country',
-			'x_phone' => 'phone',
-			'x_email' => 'email') as $key => $field)
+		$response_code = $this->CI->input->post('x_response_code');
+		$message = $this->CI->input->post('x_response_reason_text');
+		$reference = $this->CI->input->post('x_trans_id');
+
+		if ($response_code == '1')
 		{
-			if (isset($params[$field]))
+			// we pass through $method rather than trusting the POST data because
+			// it may have been tampered with
+			if ($method == 'AUTH_CAPTURE')
 			{
-				$data[$key] = $params[$field];
+				return new Merchant_response(Merchant_response::COMPLETE, $message, $reference);
+			}
+			else
+			{
+				return new Merchant_response(Merchant_response::AUTHORIZED, $message, $reference);
 			}
 		}
 
-		$sim = new AuthorizeNetSIM_Form($data);
-
-		$post_url = $this->settings['test_mode'] ? self::PROCESS_URL_TEST: self::PROCESS_URL;
-		Merchant::redirect_post($post_url, $sim->getHiddenFieldString());
+		return new Merchant_response(Merchant_response::FAILED, $message);
 	}
 
-	public function _process_return()
+	protected function _validate_return_hash()
 	{
-		$response = new AuthorizeNetSIM($this->settings['api_login_id']);
-
-  		if ($response->approved)
-  		{
-			return new Merchant_response('authorized', (string)$response->response_reason_text, (string)$response->trans_id, (string)$response->amount);
-		}
-		elseif ($response->declined)
-		{
-			return new Merchant_response('declined', (string)$response->response_reason_text);
-		}
-		else
-		{
-			return new Merchant_response('failed', (string)$response->response_reason_text);
-		}
+		$expected = strtoupper(md5($this->setting('api_login_id').$transaction_id.$this->amount_dollars()));
+		$actual = (string)$this->CI->input->post('x_MD5_Hash');
+		return $expected == $actual;
 	}
 }
+
 /* End of file ./libraries/merchant/drivers/merchant_authorize_net_sim.php */
