@@ -27,9 +27,6 @@
 
 ## Quick Start
 
-	//use this for sparks
-	$this->load->spark('ci-merchant/1.1.0');
-
 	// load the merchant library
 	$this->load->library('merchant');
 
@@ -38,7 +35,8 @@
 
 	// initialize payment driver settings (if not already done in config)
 	$this->merchant->initialize(array(
-		'paypal_email' => 'text@example.com'
+		'paypal_email' => 'text@example.com',
+		'test_mode' => TRUE,
 	));
 
 	// process payment
@@ -46,27 +44,28 @@
 		'amount' => 99.00,
 		'currency' => 'USD',
 		'reference' => 'Order #50',
-		'description' => 'something descriptive', 
-		'return_url' => 'http://www.google.com',
-	);
-	/* merchant_paypal settable params */
-	$others = array(
-		'amount' => 99.00,
-		'currency' => 'USD',
-		'description' => 'something descriptive',
-		'order_id' => 'unique id",
-		'return_url' => 'http://yoursite.com/paid', // (also the notify URL for IPN)
-		'cancel_url' => 'http://yoursite.com/notpaid',
-	);
-
-	/* end other params */
+	)
 	$this->merchant->purchase($params);
 
+## process return from payment gateway (hosted payment gateways only) paypal example for the above code
+	
+	// load the merchant library
+	$this->load->library('merchant');
 
-	// process return from payment gateway (hosted payment gateways only)
+	// load a payment driver
+	$this->merchant->load('paypal');
+
+	// initialize payment driver settings (if not already done in config)
+	$this->merchant->initialize(array(
+		'paypal_email' => 'text@example.com',
+		'test_mode' => TRUE,
+	));
+
+	$params = array(
+	  'amount' => 99.00,
+	  'currency' => 'USD',
+	);
 	$this->merchant->purchase_return($params);
-
-
 
 ## License
 
