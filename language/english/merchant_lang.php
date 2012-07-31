@@ -14,6 +14,7 @@ $lang = array(
 	'merchant_inipay'						=> 'INIpay',
 	'merchant_gocardless'					=> 'GoCardless',
 	'merchant_manual'						=> 'Manual',
+	'merchant_netaxept'						=> 'Nets Netaxept',
 	'merchant_ogone_directlink'				=> 'Ogone DirectLink',
 	'merchant_payflow_pro'					=> 'Payflow Pro',
 	'merchant_paypal'						=> 'Paypal Standard',
