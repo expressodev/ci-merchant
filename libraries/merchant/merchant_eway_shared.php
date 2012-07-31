@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -11,10 +11,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
-
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
-
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,6 +28,7 @@
  * Merchant eWAY External Class
  *
  * Payment processing using eWAY's Secure Hosted Page
+ * Documentation: http://www.eway.com.au/_files/documentation/HostedPaymentPageDoc.pdf
  */
 
 class Merchant_eway_shared extends Merchant_driver
@@ -35,97 +36,91 @@ class Merchant_eway_shared extends Merchant_driver
 	const PROCESS_URL = 'https://au.ewaygateway.com/Request/';
 	const PROCESS_RETURN_URL = 'https://au.ewaygateway.com/Result/';
 
-	public $required_fields = array('amount', 'currency_code', 'reference', 'return_url', 'cancel_url');
-
-	public $settings = array(
-		'customer_id' => '',
-		'username' => '',
-		'company_name' => '',
-		'company_logo' => '',
-		'page_title' => '',
-		'page_banner' => '',
-		'page_description' => '',
-		'page_footer' => '',
-	);
-
-	public $CI;
-
-	public function __construct()
+	public function default_settings()
 	{
-		$this->CI =& get_instance();
-	}
-
-	public function process($params)
-	{
-		$this->CI->load->helper('url');
-
-		$data = array(
-			'CustomerID' => $this->settings['customer_id'],
-			'UserName' => $this->settings['username'],
-			'Amount' => sprintf('%01.2f', $params['amount']),
-			'Currency' => $params['currency_code'],
-			'PageTitle' => $this->settings['page_title'],
-			'PageDescription' => $this->settings['page_description'],
-			'PageFooter' => $this->settings['page_footer'],
-			'PageBanner' => $this->settings['page_banner'],
-			'Language' => 'EN',
-			'CompanyName' => $this->settings['company_name'],
-			'CompanyLogo' => $this->settings['company_logo'],
-			'CancelUrl' => $params['cancel_url'],
-			'ReturnUrl' => $params['return_url'],
-			'MerchantReference' => $params['reference'],
+		return array(
+			'customer_id' => '',
+			'username' => '',
+			'company_name' => '',
+			'company_logo' => '',
+			'page_title' => '',
+			'page_banner' => '',
+			'page_description' => '',
+			'page_footer' => '',
 		);
-
-		$response = Merchant::curl_helper(self::PROCESS_URL.'?'.http_build_query($data));
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
-
-		$xml = simplexml_load_string($response['data']);
-
-		// redirect to payment page
-		if (empty($xml) OR ! isset($xml->Result))
-		{
-			return new Merchant_response('failed', 'invalid_response');
-		}
-		elseif ($xml->Result == 'True')
-		{
-			redirect((string)$xml->URI);
-		}
-		else
-		{
-			return new Merchant_response('failed', (string)$xml->Error);
-		}
 	}
 
-	public function process_return($params)
+	public function purchase()
 	{
-		if (($payment_code = $this->CI->input->get_post('AccessPaymentCode')) === FALSE)
+		$request = $this->_build_purchase();
+		$response = $this->get_request(self::PROCESS_URL.'?'.http_build_query($request));
+		$xml = simplexml_load_string($response);
+
+		if ((string)$xml->Result == 'True')
 		{
-			return new Merchant_response('failed', 'invalid_response');
+			$this->redirect((string)$xml->URI);
+		}
+
+		return new Merchant_response(Merchant_response::FAILED, (string)$xml->Error);
+	}
+
+	public function purchase_return()
+	{
+		$payment_code = $this->CI->input->get_post('AccessPaymentCode');
+		if (empty($payment_code))
+		{
+			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
 
 		$data = array(
-			'CustomerID' => $this->settings['customer_id'],
-			'UserName' => $this->settings['username'],
-			'AccessPaymentCode' => $_REQUEST['AccessPaymentCode'],
+			'CustomerID' => $this->setting('customer_id'),
+			'UserName' => $this->setting('username'),
+			'AccessPaymentCode' => $payment_code,
 		);
 
-		$response = Merchant::curl_helper(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
-		if ( ! empty($response['error'])) return new Merchant_response('failed', $response['error']);
+		$response = $this->get_request(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
+		$xml = simplexml_load_string($response);
 
-		$xml = simplexml_load_string($response['data']);
+		if ((string)$xml->TrxnStatus == 'True')
+		{
+			return new Merchant_response(Merchant_response::COMPLETE, NULL, (string)$xml->TrxnNumber);
+		}
 
-		if ( ! isset($xml->TrxnStatus))
-		{
-			return new Merchant_response('failed', 'invalid_response');
-		}
-		elseif ($xml->TrxnStatus == 'True')
-		{
-			return new Merchant_response('authorized', '', (string)$xml->TrxnNumber, (double)$xml->ReturnAmount);
-		}
-		else
-		{
-			return new Merchant_response('declined', (string)$xml->TrxnResponseMessage, (string)$xml->TrxnNumber);
-		}
+		return new Merchant_response(Merchant_response::FAILED,
+			(string)$xml->TrxnResponseMessage,
+			(string)$xml->TrxnNumber);
+	}
+
+	protected function _build_purchase()
+	{
+		$this->require_params('return_url', 'cancel_url');
+
+		$request = array();
+		$request['CustomerID'] = $this->setting('customer_id');
+		$request['UserName'] = $this->setting('username');
+		$request['Amount'] = $this->amount_dollars();
+		$request['Currency'] = $this->param('currency');
+		$request['PageTitle'] = $this->setting('page_title');
+		$request['PageDescription'] = $this->setting('page_description');
+		$request['PageFooter'] = $this->setting('page_footer');
+		$request['PageBanner'] = $this->setting('page_banner');
+		$request['Language'] = 'EN';
+		$request['CompanyName'] = $this->setting('company_name');
+		$request['CompanyLogo'] = $this->setting('company_logo');
+		$request['CancelUrl'] = $this->param('cancel_url');
+		$request['ReturnUrl'] = $this->param('return_url');
+		$request['MerchantReference'] = $this->param('description');
+		$request['CustomerFirstName'] = $this->param('first_name');
+		$request['CustomerLastName'] = $this->param('last_name');
+		$request['CustomerAddress'] = trim($this->param('address1')." \n".$this->param('address2'));
+		$request['CustomerCity'] = $this->param('city');
+		$request['CustomerState'] = $this->param('region');
+		$request['CustomerPostCode'] = $this->param('postcode');
+		$request['CustomerCountry'] = $this->param('country');
+		$request['CustomerEmail'] = $this->param('email');
+		$request['CustomerPhone'] = $this->param('phone');
+
+		return $request;
 	}
 }
 

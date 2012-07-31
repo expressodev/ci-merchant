@@ -1,12 +1,31 @@
-CI Merchant Library
-===================
+# CI Merchant Library
 
-Requirements
-------------
+## Requirements
+
  * CodeIgniter 2.0+
 
-Quick Start
------------
+## Supported Payment Gateways
+
+ * 2Checkout
+ * Authorize.net AIM
+ * Authorize.net SIM
+ * DPS PaymentExpress PxPay
+ * DPS PaymentExpress PxPost
+ * Dummy (for testing purposes)
+ * eWay Hosted
+ * eWay Shared
+ * GoCardless
+ * iDEAL
+ * Manual (for supporting check / bank transfers)
+ * Payflow Pro
+ * Paypal Express Checkout
+ * Paypal Pro
+ * Sage Pay Direct
+ * Sage Pay Server
+ * Stripe
+ * WorldPay
+
+## Quick Start
 
 	// load the merchant library
 	$this->load->library('merchant');
@@ -20,16 +39,16 @@ Quick Start
 	));
 
 	// process payment
-	$this->merchant->process(array(
+	$params = array(
 		'amount' => 99.00,
-		'currency_code' => 'USD',
-		'reference' => 'Order #50'
-	));
+		'currency' => 'USD',
+		'reference' => 'Order #50',
+	)
+	$this->merchant->purchase($params);
 
 	// process return from payment gateway (hosted payment gateways only)
-	$this->merchant->process_return();
+	$this->merchant->purchase_return($params);
 
-License
--------
+## License
 
-You are free to use this code under the terms of the MIT License. See LICENSE.txt for further details.
+CI Merchant is released under the MIT License. For more information, see [License](https://github.com/expressodev/ci-merchant/blob/develop/LICENSE.md).
