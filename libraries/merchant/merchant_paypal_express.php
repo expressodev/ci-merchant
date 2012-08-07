@@ -86,6 +86,7 @@ class Merchant_paypal_express extends Merchant_paypal_base
 		$request[$prefix.'SHIPTOCOUNTRYCODE'] = $this->param('country');
 		$request[$prefix.'SHIPTOZIP'] = $this->param('postcode');
 		$request[$prefix.'SHIPTOPHONENUM'] = $this->param('phone');
+		$request['EMAIL'] = $this->param('email');
 
 		return $request;
 	}
