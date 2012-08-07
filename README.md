@@ -35,7 +35,8 @@
 
 	// initialize payment driver settings (if not already done in config)
 	$this->merchant->initialize(array(
-		'paypal_email' => 'text@example.com'
+		'paypal_email' => 'text@example.com',
+		'test_mode' => TRUE,
 	));
 
 	// process payment
@@ -46,7 +47,24 @@
 	)
 	$this->merchant->purchase($params);
 
-	// process return from payment gateway (hosted payment gateways only)
+## process return from payment gateway (hosted payment gateways only) paypal example for the above code
+	
+	// load the merchant library
+	$this->load->library('merchant');
+
+	// load a payment driver
+	$this->merchant->load('paypal');
+
+	// initialize payment driver settings (if not already done in config)
+	$this->merchant->initialize(array(
+		'paypal_email' => 'text@example.com',
+		'test_mode' => TRUE,
+	));
+
+	$params = array(
+	  'amount' => 99.00,
+	  'currency' => 'USD',
+	);
 	$this->merchant->purchase_return($params);
 
 ## License
