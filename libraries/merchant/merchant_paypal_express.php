@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -70,23 +70,22 @@ class Merchant_paypal_express extends Merchant_paypal_base
 		$this->require_params('return_url');
 
 		$request = $this->_new_request('SetExpressCheckout');
-		$this->_add_request_details($request, 'Authorization', 'PAYMENTREQUEST_0_');
+		$prefix = 'PAYMENTREQUEST_0_';
+		$this->_add_request_details($request, 'Authorization', $prefix);
 
 		// pp express specific fields
 		$request['NOSHIPPING'] = 1;
 		$request['ALLOWNOTE'] = 0;
-		$request['ADDROVERRIDE'] = 1;
 		$request['RETURNURL'] = $this->param('return_url');
 		$request['CANCELURL'] = $this->param('cancel_url');
-		$request['SHIPTONAME'] = $this->param('name');
-		$request['SHIPTOSTREET'] = $this->param('address1');
-		$request['SHIPTOSTREET2'] = $this->param('address2');
-		$request['SHIPTOCITY'] = $this->param('city');
-		$request['SHIPTOSTATE'] = $this->param('region');
-		$request['SHIPTOCOUNTRYCODE'] = $this->param('countrycode');
-		$request['SHIPTOZIP'] = $this->param('postcode');
-		$request['SHIPTOPHONENUM'] = $this->param('phone');
-		$request['EMAIL'] = $this->param('email');
+		$request[$prefix.'SHIPTONAME'] = $this->param('name');
+		$request[$prefix.'SHIPTOSTREET'] = $this->param('address1');
+		$request[$prefix.'SHIPTOSTREET2'] = $this->param('address2');
+		$request[$prefix.'SHIPTOCITY'] = $this->param('city');
+		$request[$prefix.'SHIPTOSTATE'] = $this->param('region');
+		$request[$prefix.'SHIPTOCOUNTRYCODE'] = $this->param('country');
+		$request[$prefix.'SHIPTOZIP'] = $this->param('postcode');
+		$request[$prefix.'SHIPTOPHONENUM'] = $this->param('phone');
 
 		return $request;
 	}
