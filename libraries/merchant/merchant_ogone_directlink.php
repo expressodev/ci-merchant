@@ -116,7 +116,7 @@ class Merchant_ogone_directlink_response extends Merchant_response
 		$this->_response = simplexml_load_string($response);
 		$this->_status = self::FAILED;
 
-		if (empty($this->_response['PAYID']))
+		if ( ! isset($this->_response['STATUS']))
 		{
 			$this->_message = lang('merchant_invalid_response');
 		}
@@ -132,7 +132,7 @@ class Merchant_ogone_directlink_response extends Merchant_response
 		}
 		else
 		{
-			$this->_message = (string)$xml['NCERRORPLUS'];
+			$this->_message = (string)$this->_response['NCERRORPLUS'];
 			$this->_reference = (string)$this->_response['PAYID'];
 		}
 	}
