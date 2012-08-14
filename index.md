@@ -12,6 +12,10 @@ module for ExpressionEngine](http://exp-resso.com/store), and is now used on hun
 
 CI-Merchant is released under the open source MIT license, and is [under active development](https://github.com/expressodev/ci-merchant/commits/develop).
 
+## Supported Gateways
+
+Please refer to the navigation links on the left of this page for a complete list of supported gateways.
+
 ## Supported Methods
 
 Most payment gateways support the following methods:
@@ -66,10 +70,10 @@ will prefer to hard-code the settings in a configuration file).
 
 In the case of PayPal Express, the following settings are available:
 
-* username
-* password
-* signature
-* test_mode
+* `username`
+* `password`
+* `signature`
+* `test_mode`
 
 The settings are initialized by passing an array to the `initialize()` method:
 
@@ -148,11 +152,11 @@ The `$response` object returned from either the `purchase()` or `purchase_return
 an instance of the `Merchant_response` class. The response will have one of 5 statuses,
 representing the state the payment is in:
 
-* Merchant_response::AUTHORIZED
-* Merchant_response::COMPLETE
-* Merchant_response::FAILED
-* Merchant_response::REDIRECT
-* Merchant_response::REFUNDED
+* `Merchant_response::AUTHORIZED`
+* `Merchant_response::COMPLETE`
+* `Merchant_response::FAILED`
+* `Merchant_response::REDIRECT`
+* `Merchant_response::REFUNDED`
 
 You can check the status of the response by calling the `status()` method:
 
