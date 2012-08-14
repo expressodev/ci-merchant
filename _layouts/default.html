@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>{% if page.title %}{{ page.title }} - {% endif %}CI Merchant - CodeIgniter Payments Library</title>
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <link rel="stylesheet" type="text/css" href="/prettify.css" />
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-21792889-4']);
+        _gaq.push(['_trackPageview']);
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+</head>
+<body>
+    <a href="http://github.com/expressodev/ci-merchant"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+
+    {% include nav.html %}
+
+    <div id="content">
+      {{ content }}
+    </div>
+
+    <div id="footer">
+        Copyright &copy; 2012 <a href="http://github.com/adrianmacneil">Adrian Macneil</a> &middot;
+        This documentation is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 License</a>
+    </div>
+
+    <script type="text/javascript" src="/jquery.min.js"></script>
+    <script type="text/javascript">
+    $(function() {
+        $("pre").addClass("prettyprint").children("code").addClass("language-php");
+        $.getScript("/prettify.js", function() { prettyPrint(); });
+    })
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<div id="nav">
+
+  <iframe src="http://ghbtns.com/github-btn.html?user=expressodev&amp;repo=ci-merchant&amp;type=watch&amp;count=true" allowtransparency="true" frameborder="0" scrolling="0" width="95px" height="20px"></iframe>
+  <iframe src="http://ghbtns.com/github-btn.html?user=expressodev&amp;repo=ci-merchant&amp;type=fork&amp;count=true" allowtransparency="true" frameborder="0" scrolling="0" width="80px" height="20px"></iframe>
+
+  <ul>
+    {% for link in site.navigation %}
+      <li class="{% if page.url == link.url %}current{% endif %}">
+        {% if link.url %}
+          <a href="{{ link.url }}">{{ link.title }}</a>
+        {% else %}
+          {{ link.title }}
+        {% endif %}
+        {% if link.pages %}
+          <ul>
+            {% for sublink in link.pages %}
+              <li class="{% if page.url == sublink.url %}current{% endif %}">
+                <a href="{{ sublink.url }}">{{ sublink.title }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+
+</div>

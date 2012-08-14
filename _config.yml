@@ -1,0 +1,43 @@
+navigation:
+  - title: Home
+    url: /
+  - title: API Reference
+    url: /reference.html
+  - title: Supported Gateways
+    pages:
+      - title: 2Checkout
+        url: /gateways/2checkout.html
+      - title: Authorize.Net AIM
+        url: /gateways/authorize-net-aim.html
+      - title: Authorize.Net SIM
+        url: /gateways/authorize-net-sim.html
+      - title: DPS PaymentExpress PxPay
+        url: /gateways/dps-pxpay.html
+      - title: DPS PaymentExpress PxPost
+        url: /gateways/dps-pxpost.html
+      - title: Dummy
+        url: /gateways/dummy.html
+      - title: eWay Direct
+        url: /gateways/eway-direct.html
+      - title: eWay Shared
+        url: /gateways/eway-shared.html
+      - title: GoCardless
+        url: /gateways/gocardless.html
+      - title: iDEAL
+        url: /gateways/ideal.html
+      - title: Manual
+        url: /gateways/manual.html
+      - title: Payflow Pro
+        url: /gateways/payflow-pro.html
+      - title: PayPal Express Checkout
+        url: /gateways/paypal-express.html
+      - title: PayPal Website Payments Pro
+        url: /gateways/paypal-pro.html
+      - title: SagePay Direct
+        url: /gateways/sagepay-direct.html
+      - title: SagePay Server
+        url: /gateways/sagepay-server.html
+      - title: Stripe
+        url: /gateways/stripe.html
+      - title: WorldPay
+        url: /gateways/worldpay.html
