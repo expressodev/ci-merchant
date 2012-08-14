@@ -10,7 +10,16 @@ It allows you to integrate any supported payment gateway using a consistent API.
 
 ## Documentation
 
-For full documentation please visit [ci-merchant.org](http://ci-merchant.org/).
+For complete documentation and examples please visit [ci-merchant.org](http://ci-merchant.org/).
+
+## Support
+
+If you are having general issues with CI-Merchant, we suggest posting your issue on
+[Stack Overflow](http://stackoverflow.com/). Feel free to ping [@expressodev](https://twitter.com/expressodev) on Twitter
+if you can't find a solution.
+
+If you believe you have found a bug, please report it using the [GitHub issue tracker](https://github.com/expressodev/ci-merchant/issues),
+or better yet, fork the library and [submit a pull request](https://github.com/expressodev/ci-merchant/pulls).
 
 ## License
 
