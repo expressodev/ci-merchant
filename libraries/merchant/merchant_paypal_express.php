@@ -73,6 +73,8 @@ class Merchant_paypal_express extends Merchant_paypal_base
 		$this->_add_request_details($request, 'Authorization', 'PAYMENTREQUEST_0_');
 
 		// pp express specific fields
+		$request['SOLUTIONTYPE'] = 'Sole'; // This allows a user to checkout w/ a CC but no account Options: Sole/Mark
+		$request['LANDINGPAGE'] = 'Login'; // Allows you to choose which page a user lands on PP site Options: Billing/Login
 		$request['NOSHIPPING'] = 1;
 		$request['ALLOWNOTE'] = 0;
 		$request['ADDROVERRIDE'] = 1;
@@ -83,7 +85,7 @@ class Merchant_paypal_express extends Merchant_paypal_base
 		$request['SHIPTOSTREET2'] = $this->param('address2');
 		$request['SHIPTOCITY'] = $this->param('city');
 		$request['SHIPTOSTATE'] = $this->param('region');
-		$request['SHIPTOCOUNTRYCODE'] = $this->param('countrycode');
+		$request['SHIPTOCOUNTRYCODE'] = $this->param('country');
 		$request['SHIPTOZIP'] = $this->param('postcode');
 		$request['SHIPTOPHONENUM'] = $this->param('phone');
 		$request['EMAIL'] = $this->param('email');
