@@ -69,7 +69,7 @@ class Merchant_paypal_express extends Merchant_paypal_base
 	{
 		$this->require_params('return_url');
 
-		$request = $this->_new_request('SetExpressCheckout');	
+		$request = $this->_new_request('SetExpressCheckout');
 		$this->_add_request_details($request, 'Authorization', 'PAYMENTREQUEST_0_');
 
 		// pp express specific fields
