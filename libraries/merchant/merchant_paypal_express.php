@@ -69,12 +69,12 @@ class Merchant_paypal_express extends Merchant_paypal_base
 	{
 		$this->require_params('return_url');
 
-		$request = $this->_new_request('SetExpressCheckout');
+		$request = $this->_new_request('SetExpressCheckout');	
 		$this->_add_request_details($request, 'Authorization', 'PAYMENTREQUEST_0_');
 
 		// pp express specific fields
-		$request['SOLUTIONTYPE'] = 'Sole'; // This allows a user to checkout w/ a CC but no account Options: Sole/Mark
-		$request['LANDINGPAGE'] = 'Login'; // Allows you to choose which page a user lands on PP site Options: Billing/Login
+		$request['SOLUTIONTYPE'] = $this->setting('pp_solution_type');
+		$request['LANDINGPAGE'] = $this->setting('pp_landing_page');
 		$request['NOSHIPPING'] = 1;
 		$request['ALLOWNOTE'] = 0;
 		$request['ADDROVERRIDE'] = 1;

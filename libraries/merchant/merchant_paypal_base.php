@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Adrian Macneil
+ * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,13 @@ abstract class Merchant_paypal_base extends Merchant_driver
 			'username' => '',
 			'password' => '',
 			'signature' => '',
-			'test_mode' => FALSE
+			'test_mode' => FALSE,
+			'pp_solution_type' => array('type' => 'select', 'default' => 'Sole', 'options' => array(
+				'Sole' => 'No Account Required',
+				'Mark' => 'Account Required to Checkout')),
+			'pp_landing_page' => array('type' => 'select', 'default' => 'Login', 'options' => array(
+				'Billing'	=> 'Billing Tab',
+				'Login'		=> 'Login Tab'))
 		);
 	}
 

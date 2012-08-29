@@ -5,7 +5,6 @@ $lang = array(
 	'merchant_2checkout'					=> '2Checkout',
 	'merchant_authorize_net'				=> 'Authorize.Net AIM',
 	'merchant_authorize_net_sim'			=> 'Authorize.Net SIM',
-	'merchant_cardsave'						=> 'Cardsave',
 	'merchant_dps_pxpay'					=> 'DPS PaymentExpress PxPay',
 	'merchant_dps_pxpost'					=> 'DPS PaymentExpress PxPost',
 	'merchant_dummy'						=> 'Dummy',
@@ -15,14 +14,12 @@ $lang = array(
 	'merchant_inipay'						=> 'INIpay',
 	'merchant_gocardless'					=> 'GoCardless',
 	'merchant_manual'						=> 'Manual',
-	'merchant_netaxept'						=> 'Nets Netaxept',
 	'merchant_ogone_directlink'				=> 'Ogone DirectLink',
 	'merchant_payflow_pro'					=> 'Payflow Pro',
-	'merchant_paypal'						=> 'Paypal Standard (Deprecated)',
+	'merchant_paypal'						=> 'Paypal Standard',
 	'merchant_paypal_express'				=> 'Paypal Express Checkout',
 	'merchant_paypal_pro'					=> 'Paypal Pro',
 	'merchant_sagepay_direct'				=> 'Sagepay Direct',
-	'merchant_sagepay_server'				=> 'Sagepay Server',
 	'merchant_stripe'						=> 'Stripe',
 	'merchant_worldpay'						=> 'WorldPay',
 
@@ -63,6 +60,8 @@ $lang = array(
 	'merchant_public_key_path'				=> 'Public Key Server Path',
 	'merchant_private_key_path'				=> 'Private Key Server Path',
 	'merchant_private_key_password'			=> 'Private Key Password',
+	'merchant_pp_solution_type'				=> 'PayPal Account Required for Checkout',
+	'merchant_pp_landing_page'				=> 'PayPal Tab user is directed to',
 
 	// payment gateway fields
 	'merchant_card_type'					=> 'Card Type',
