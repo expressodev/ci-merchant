@@ -34,7 +34,17 @@ require_once(MERCHANT_DRIVER_PATH.'/merchant_paypal_base.php');
  */
 
 class Merchant_paypal_pro extends Merchant_paypal_base
-{
+{	
+	
+	public function default_settings()
+	{
+		return array(
+			'username' => '',
+			'password' => '',
+			'signature' => '',
+			'test_mode' => FALSE
+	}
+	
 	public function authorize()
 	{
 		$request = $this->_build_authorize_or_purchase('Authorization');

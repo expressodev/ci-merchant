@@ -37,22 +37,6 @@ abstract class Merchant_paypal_base extends Merchant_driver
 	const CHECKOUT_URL = 'https://www.paypal.com/webscr';
 	const CHECKOUT_URL_TEST = 'https://www.sandbox.paypal.com/webscr';
 
-	public function default_settings()
-	{
-		return array(
-			'username' => '',
-			'password' => '',
-			'signature' => '',
-			'test_mode' => FALSE,
-			'pp_solution_type' => array('type' => 'select', 'default' => 'Sole', 'options' => array(
-				'Sole' => 'No Account Required',
-				'Mark' => 'Account Required to Checkout')),
-			'pp_landing_page' => array('type' => 'select', 'default' => 'Login', 'options' => array(
-				'Billing'	=> 'Billing Tab',
-				'Login'		=> 'Login Tab'))
-		);
-	}
-
 	public function capture()
 	{
 		$request = $this->_build_capture();

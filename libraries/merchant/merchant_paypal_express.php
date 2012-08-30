@@ -35,6 +35,22 @@ require_once(MERCHANT_DRIVER_PATH.'/merchant_paypal_base.php');
 
 class Merchant_paypal_express extends Merchant_paypal_base
 {
+	public function default_settings()
+	{
+		return array(
+			'username' => '',
+			'password' => '',
+			'signature' => '',
+			'test_mode' => FALSE,
+			'solution_type' => array('type' => 'select', 'default' => 'Sole', 'options' => array(
+				'Sole' => 'No Account Required',
+				'Mark' => 'Account Required to Checkout')),
+			'landing_page' => array('type' => 'select', 'default' => 'Login', 'options' => array(
+				'Billing'	=> 'Billing Tab',
+				'Login'		=> 'Login Tab'))
+		);
+	}
+	
 	public function authorize()
 	{
 		$request = $this->_build_authorize_or_purchase();
