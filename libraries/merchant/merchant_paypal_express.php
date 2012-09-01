@@ -43,11 +43,11 @@ class Merchant_paypal_express extends Merchant_paypal_base
 			'signature' => '',
 			'test_mode' => FALSE,
 			'solution_type' => array('type' => 'select', 'default' => 'Sole', 'options' => array(
-				'Sole' => 'No Account Required',
-				'Mark' => 'Account Required to Checkout')),
+				'Sole' => 'merchant_solution_type_sole',
+				'Mark' => 'merchant_solution_type_mark')),
 			'landing_page' => array('type' => 'select', 'default' => 'Login', 'options' => array(
-				'Billing'	=> 'Billing Tab',
-				'Login'		=> 'Login Tab'))
+				'Billing'	=> 'merchant_landing_page_billing',
+				'Login'		=> 'merchant_landing_page_login'))
 		);
 	}
 	
