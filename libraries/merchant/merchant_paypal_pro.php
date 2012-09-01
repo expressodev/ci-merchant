@@ -41,7 +41,8 @@ class Merchant_paypal_pro extends Merchant_paypal_base
 			'username' => '',
 			'password' => '',
 			'signature' => '',
-			'test_mode' => FALSE
+			'test_mode' => FALSE,
+		);
 	}
 	
 	public function authorize()
