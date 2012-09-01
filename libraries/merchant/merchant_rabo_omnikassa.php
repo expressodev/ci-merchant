@@ -85,7 +85,7 @@ class Merchant_rabo_omnikassa extends Merchant_driver
 			'|normalReturnUrl='.$this->param('return_url').
 			'|automaticResponseUrl='.$this->param('return_url').
 			'|transactionReference='.$this->param('transaction_id').
-			'|keyVersion=1';
+			'|keyVersion='.$this->setting('key_version');
 		$request['InterfaceVersion'] = 'HP_1.0';
 		$request['Seal'] = hash('sha256', $request['Data'].$this->setting('secret_key'));
 		return $request;
