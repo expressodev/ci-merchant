@@ -89,8 +89,8 @@ class Merchant_paypal_express extends Merchant_paypal_base
 		$this->_add_request_details($request, 'Authorization', 'PAYMENTREQUEST_0_');
 
 		// pp express specific fields
-		$request['SOLUTIONTYPE'] = $this->setting('pp_solution_type');
-		$request['LANDINGPAGE'] = $this->setting('pp_landing_page');
+		$request['SOLUTIONTYPE'] = $this->setting('solution_type');
+		$request['LANDINGPAGE'] = $this->setting('landing_page');
 		$request['NOSHIPPING'] = 1;
 		$request['ALLOWNOTE'] = 0;
 		$request['ADDROVERRIDE'] = 1;
