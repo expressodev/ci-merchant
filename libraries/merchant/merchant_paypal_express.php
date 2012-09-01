@@ -35,6 +35,22 @@ require_once(MERCHANT_DRIVER_PATH.'/merchant_paypal_base.php');
 
 class Merchant_paypal_express extends Merchant_paypal_base
 {
+	public function default_settings()
+	{
+		return array(
+			'username' => '',
+			'password' => '',
+			'signature' => '',
+			'test_mode' => FALSE,
+			'solution_type' => array('type' => 'select', 'default' => 'Sole', 'options' => array(
+				'Sole' => 'merchant_solution_type_sole',
+				'Mark' => 'merchant_solution_type_mark')),
+			'landing_page' => array('type' => 'select', 'default' => 'Login', 'options' => array(
+				'Billing'	=> 'merchant_landing_page_billing',
+				'Login'		=> 'merchant_landing_page_login'))
+		);
+	}
+	
 	public function authorize()
 	{
 		$request = $this->_build_authorize_or_purchase();
@@ -74,6 +90,8 @@ class Merchant_paypal_express extends Merchant_paypal_base
 		$this->_add_request_details($request, 'Authorization', $prefix);
 
 		// pp express specific fields
+		$request['SOLUTIONTYPE'] = $this->setting('solution_type');
+		$request['LANDINGPAGE'] = $this->setting('landing_page');
 		$request['NOSHIPPING'] = 1;
 		$request['ALLOWNOTE'] = 0;
 		$request['RETURNURL'] = $this->param('return_url');

@@ -37,16 +37,6 @@ abstract class Merchant_paypal_base extends Merchant_driver
 	const CHECKOUT_URL = 'https://www.paypal.com/webscr';
 	const CHECKOUT_URL_TEST = 'https://www.sandbox.paypal.com/webscr';
 
-	public function default_settings()
-	{
-		return array(
-			'username' => '',
-			'password' => '',
-			'signature' => '',
-			'test_mode' => FALSE
-		);
-	}
-
 	public function capture()
 	{
 		$request = $this->_build_capture();

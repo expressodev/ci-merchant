@@ -63,6 +63,12 @@ $lang = array(
 	'merchant_public_key_path'				=> 'Public Key Server Path',
 	'merchant_private_key_path'				=> 'Private Key Server Path',
 	'merchant_private_key_password'			=> 'Private Key Password',
+	'merchant_solution_type'				=> 'PayPal Account Required for Checkout',
+	'merchant_landing_page'					=> 'PayPal Tab user is directed to',
+	'merchant_solution_type_mark'			=> 'Account Required to Checkout',
+	'merchant_solution_type_sole'			=> 'No Account Required',
+	'merchant_landing_page_billing'			=> 'Billing Tab',
+	'merchant_landing_page_login'			=> 'Login Tab',
 
 	// payment gateway fields
 	'merchant_card_type'					=> 'Card Type',
