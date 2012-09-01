@@ -1,71 +1,25 @@
-# CI Merchant Library
+# CI-Merchant Library
+
+CI-Merchant is a driver-based payment processing library built specifically for use in CodeIgniter web applications.
+It allows you to integrate any supported payment gateway using a consistent API.
 
 ## Requirements
 
  * CodeIgniter 2.0+
+ * PHP 5.2+
 
-## Supported Payment Gateways
+## Documentation
 
- * 2Checkout
- * Authorize.net AIM
- * Authorize.net SIM
- * DPS PaymentExpress PxPay
- * DPS PaymentExpress PxPost
- * Dummy (for testing purposes)
- * eWay Hosted
- * eWay Shared
- * GoCardless
- * iDEAL
- * Manual (for supporting check / bank transfers)
- * Payflow Pro
- * Paypal Express Checkout
- * Paypal Pro
- * Sage Pay Direct
- * Sage Pay Server
- * Stripe
- * WorldPay
+For complete documentation and examples please visit [ci-merchant.org](http://ci-merchant.org/).
 
-## Quick Start
+## Support
 
-	// load the merchant library
-	$this->load->library('merchant');
+If you are having general issues with CI-Merchant, we suggest posting your issue on
+[Stack Overflow](http://stackoverflow.com/). Feel free to ping [@expressodev](https://twitter.com/expressodev) on Twitter
+if you can't find a solution.
 
-	// load a payment driver
-	$this->merchant->load('paypal');
-
-	// initialize payment driver settings (if not already done in config)
-	$this->merchant->initialize(array(
-		'paypal_email' => 'text@example.com',
-		'test_mode' => TRUE,
-	));
-
-	// process payment
-	$params = array(
-		'amount' => 99.00,
-		'currency' => 'USD',
-		'reference' => 'Order #50',
-	)
-	$this->merchant->purchase($params);
-
-## process return from payment gateway (hosted payment gateways only) paypal example for the above code
-	
-	// load the merchant library
-	$this->load->library('merchant');
-
-	// load a payment driver
-	$this->merchant->load('paypal');
-
-	// initialize payment driver settings (if not already done in config)
-	$this->merchant->initialize(array(
-		'paypal_email' => 'text@example.com',
-		'test_mode' => TRUE,
-	));
-
-	$params = array(
-	  'amount' => 99.00,
-	  'currency' => 'USD',
-	);
-	$this->merchant->purchase_return($params);
+If you believe you have found a bug, please report it using the [GitHub issue tracker](https://github.com/expressodev/ci-merchant/issues),
+or better yet, fork the library and [submit a pull request](https://github.com/expressodev/ci-merchant/pulls).
 
 ## License
 
