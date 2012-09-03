@@ -53,7 +53,7 @@ class Merchant_rabo_omnikassa extends Merchant_driver
 
 	public function purchase_return()
 	{
-		if ('HP_1.0' !== $this->CI->input->post('InterfaceVersion'))
+		if ( ! $this->CI->input->post('InterfaceVersion'))
 		{
 			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
 		}
