@@ -74,20 +74,33 @@ class Merchant_dps_pxpost extends Merchant_driver
 
 	private function _build_authorize_or_purchase($method)
 	{
-		$this->require_params('card_no', 'name', 'exp_month', 'exp_year', 'csc');
-
+		$this->require_params('currency'); // DPS requires currency to be specified
+		
 		$request = new SimpleXMLElement('<Txn></Txn>');
+
+		if ( ! $this->setting('enable_token_billing'))
+		{
+			// These are only required if this is NOT a token transaction
+			$this->require_params('card_no', 'name', 'exp_month', 'exp_year', 'csc');
+			
+			$request->CardNumber = $this->param('card_no');
+			$request->CardHolderName = $this->param('name');
+			$request->DateExpiry = $this->param('exp_month').($this->param('exp_year') % 100);
+			$request->Cvc2 = $this->param('csc');
+		}
+
 		$request->PostUsername = $this->setting('username');
 		$request->PostPassword = $this->setting('password');
 		$request->TxnType = $method;
-		$request->CardNumber = $this->param('card_no');
-		$request->CardHolderName = $this->param('name');
 		$request->Amount = $this->amount_dollars();
-		$request->DateExpiry = $this->param('exp_month').($this->param('exp_year') % 100);
-		$request->Cvc2 = $this->param('csc');
 		$request->InputCurrency = $this->param('currency');
 		$request->MerchantReference = $this->param('description');
 		$request->EnableAddBillCard = (int)$this->setting('enable_token_billing');
+
+		if ($this->param('billing_id'))
+		{
+			$request->BillingId = $this->param('billing_id');
+		}
 
 		return $request;
 	}
