@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,16 +36,6 @@ abstract class Merchant_paypal_base extends Merchant_driver
 	const PROCESS_URL_TEST = 'https://api-3t.sandbox.paypal.com/nvp';
 	const CHECKOUT_URL = 'https://www.paypal.com/webscr';
 	const CHECKOUT_URL_TEST = 'https://www.sandbox.paypal.com/webscr';
-
-	public function default_settings()
-	{
-		return array(
-			'username' => '',
-			'password' => '',
-			'signature' => '',
-			'test_mode' => FALSE
-		);
-	}
 
 	public function capture()
 	{

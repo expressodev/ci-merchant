@@ -3,7 +3,7 @@
 /*
  * CI-Merchant Library
  *
- * Copyright (c) 2011-2012 Crescendo Multimedia Ltd
+ * Copyright (c) 2011-2012 Adrian Macneil
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,16 @@ require_once(MERCHANT_DRIVER_PATH.'/merchant_paypal_base.php');
 
 class Merchant_paypal_pro extends Merchant_paypal_base
 {
+	public function default_settings()
+	{
+		return array(
+			'username' => '',
+			'password' => '',
+			'signature' => '',
+			'test_mode' => FALSE,
+		);
+	}
+	
 	public function authorize()
 	{
 		$request = $this->_build_authorize_or_purchase('Authorization');

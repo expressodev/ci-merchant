@@ -32,7 +32,7 @@ require_once(MERCHANT_DRIVER_PATH.'/merchant_sagepay_base.php');
  * Payment processing using SagePay Direct
  */
 
-class Merchant_sagepay_direct extends Merchant_sagepay_base
+class Merchant_sagepay_server extends Merchant_sagepay_base
 {
 	public function authorize()
 	{
@@ -42,7 +42,7 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 
 	public function authorize_return()
 	{
-		return $this->_direct3d_return('DEFERRED');
+		return $this->purchase_return();
 	}
 
 	public function purchase()
@@ -51,64 +51,65 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 		return $this->_submit_request($request);
 	}
 
-	/**
-	 * Only used for returning from Direct 3D Authentication
-	 */
-	public function purchase_return()
+	public function purchase_return($redirect_url)
 	{
-		return $this->_direct3d_return('PAYMENT');
+		$reference = $this->_decode_reference($this->param('reference'));
+
+		// validate VPSSignature
+		@$signature = md5(
+			$reference->VPSTxId.
+			$reference->VendorTxCode.
+			$_POST['Status'].
+			$_POST['TxAuthNo'].
+			$this->setting('vendor').
+			$_POST['AVSCV2'].
+			$reference->SecurityKey.
+			$_POST['AddressResult'].
+			$_POST['PostCodeResult'].
+			$_POST['CV2Result'].
+			$_POST['GiftAid'].
+			$_POST['3DSecureStatus'].
+			$_POST['CAVV'].
+			$_POST['AddressStatus'].
+			$_POST['PayerStatus'].
+			$_POST['CardType'].
+			$_POST['Last4Digits']);
+
+		if (strtolower($_POST['VPSSignature']) == $signature)
+		{
+			// add SecurityKey to response so we can record it with the payment
+			$_POST['SecurityKey'] = $reference->SecurityKey;
+
+			return new Merchant_sagepay_response($_POST);
+		}
+
+		echo "Status=INVALID";
+		exit;
+	}
+
+	/**
+	 * Because Sage Pay does things backwards compared to every other gateway
+	 * (the confirm url is called by their server, not the customer, and doesn't send a
+	 * separate post back to Sage Pay to confirm the payment),
+	 * after calling purchase_return() and recording the success/failure, the calling
+	 * script must end with a call to this method, to let Sage Pay know that the message
+	 * was received successfully, and where to send the customer.
+	 */
+	public function confirm_return($redirect_url)
+	{
+		echo "Status=OK\r\n";
+		echo "RedirectUrl=".$redirect_url;
+		exit;
 	}
 
 	protected function _build_authorize_or_purchase($method)
 	{
-		$this->require_params('card_no', 'name', 'card_type', 'exp_month', 'exp_year', 'csc');
+		$this->require_params('return_url');
 
 		$request = parent::_build_authorize_or_purchase($method);
-
-		$request['CardHolder'] = $this->param('name');
-		$request['CardNumber'] = $this->param('card_no');
-		$request['CV2'] = $this->param('csc');
-		$request['ExpiryDate'] = $this->param('exp_month').($this->param('exp_year') % 100);
-
-		$request['CardType'] = strtoupper($this->param('card_type'));
-		if ($request['CardType'] == 'MASTERCARD')
-		{
-			$request['CardType'] = 'MC';
-		}
-
-		if ($this->param('start_month') AND $this->param('start_year'))
-		{
-			$request['StartDate'] = $this->param('start_month').($this->param('start_year') % 100);
-		}
-
-		if ($this->param('card_issue'))
-		{
-			$request['IssueNumber'] = $this->param('card_issue');
-		}
+		$request['NotificationURL'] = $this->param('return_url');
 
 		return $request;
-	}
-
-	protected function _direct3d_return($TxType)
-	{
-		$data = array(
-			'MD' => $this->CI->input->post('MD'),
-			'PARes' => $this->CI->input->post('PaRes'), // inconsistent caps are intentional
-		);
-
-		if (empty($data['MD']) OR empty($data['PARes']))
-		{
-			return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
-		}
-
-		$response = $this->post_request($this->_process_url('direct3dcallback'), $data);
-		$response = $this->_decode_response($response);
-
-		// add the TxType and VendorTxCode so we can use them in the response class
-		$response['TxType'] = $TxType;
-		$response['VendorTxCode'] = $this->param('transaction_id');
-
-		return new Merchant_sagepay_response($response);
 	}
 
 	protected function _process_url($service)
@@ -116,7 +117,7 @@ class Merchant_sagepay_direct extends Merchant_sagepay_base
 		$service = strtolower($service);
 		if ($service == 'payment' OR $service == 'deferred')
 		{
-			$service = 'vspdirect-register';
+			$service = 'vspserver-register';
 		}
 
 		return parent::_process_url($service);
