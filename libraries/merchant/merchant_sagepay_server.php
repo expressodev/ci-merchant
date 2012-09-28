@@ -75,7 +75,7 @@ class Merchant_sagepay_server extends Merchant_sagepay_base
 			$_POST['CardType'].
 			$_POST['Last4Digits']);
 
-		if (strtolower($_POST['VPSSignature']) == $signature)
+		if (isset($_POST['VPSSignature']) AND strtolower($_POST['VPSSignature']) == $signature)
 		{
 			// add SecurityKey to response so we can record it with the payment
 			$_POST['SecurityKey'] = $reference->SecurityKey;
@@ -83,7 +83,8 @@ class Merchant_sagepay_server extends Merchant_sagepay_base
 			return new Merchant_sagepay_response($_POST);
 		}
 
-		echo "Status=INVALID";
+		echo "Status=INVALID\r\n";
+		echo "RedirectUrl=".$this->param('failure_url');
 		exit;
 	}
 
