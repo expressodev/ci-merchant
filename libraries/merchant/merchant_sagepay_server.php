@@ -51,7 +51,7 @@ class Merchant_sagepay_server extends Merchant_sagepay_base
 		return $this->_submit_request($request);
 	}
 
-	public function purchase_return($redirect_url)
+	public function purchase_return()
 	{
 		$reference = $this->_decode_reference($this->param('reference'));
 
