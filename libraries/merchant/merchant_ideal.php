@@ -178,7 +178,10 @@ class Merchant_ideal extends Merchant_driver
 
 		if (isset($xml->Error))
 		{
-			throw new Merchant_exception((string)$xml->Error->consumerMessage);
+			$errorCode = (string)$xml->Error->errorCode;
+			$errorMessage = (string)$xml->Error->errorMessage;
+			$errorDetail = (string)$xml->Error->errorDetail;
+			throw new Merchant_exception("$errorMessage ($errorCode: $errorDetail)");
 		}
 
 		return $xml;
