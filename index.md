@@ -10,11 +10,32 @@ It allows you to integrate any supported payment gateway using a consistent API.
 originally developed as part of [Expresso Store](http://exp-resso.com/store), an [e-commerce
 module for ExpressionEngine](http://exp-resso.com/store), and is now used on hundreds of e-commerce sites worldwide.
 
-CI-Merchant is released under the open source MIT license, and is [under active development](https://github.com/expressodev/ci-merchant/commits/develop).
+CI-Merchant is released under the open source
+[MIT license](https://github.com/expressodev/ci-merchant/blob/develop/LICENSE.md), and is
+[actively maintained](https://github.com/expressodev/ci-merchant/commits/develop).
 
 ## Supported Gateways
 
-Please refer to the navigation links on the left of this page for a complete list of supported gateways.
+The following gateways are currently supported:
+
+* 2Checkout
+* Authorize.Net AIM
+* Authorize.Net SIM
+* DPS PaymentExpress PxPay
+* DPS PaymentExpress PxPost
+* Dummy
+* eWay Direct
+* eWay Shared
+* GoCardless
+* iDEAL
+* Manual
+* Payflow Pro
+* PayPal Express Checkout
+* PayPal Website Payments Pro
+* SagePay Direct
+* SagePay Server
+* Stripe
+* WorldPay
 
 ## Supported Methods
 
@@ -198,5 +219,7 @@ payment with your payment gateway. It is also required for subsequent operations
 
     $gateway_reference = $response->reference();
 
-Congratulations! You have processed a simple payment using PayPal Express. You may now wish to
-explore gateway-specific documentation, or check out the complete [API reference](/reference.html).
+Congratulations! You have processed a simple payment using PayPal Express. If you're stuck, the best
+reference is always the [source code](https://github.com/expressodev/ci-merchant). Otherwise, consider
+[posting a question on Stack Overflow](http://stackoverflow.com/questions/ask?tags=ci-merchant) and tagging it
+with `ci-merchant`.
