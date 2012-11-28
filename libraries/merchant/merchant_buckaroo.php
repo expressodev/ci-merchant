@@ -78,7 +78,7 @@ class Merchant_buckaroo extends Merchant_driver
         }
 
         // Match incoming key
-        if ($this->_calculateDigitalSignature($_POST) != $this->CI->input->post('brq_signature'))
+        if ($this->_calculate_digital_signature($_POST) != $this->CI->input->post('brq_signature'))
         {
             return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
         }
@@ -135,7 +135,7 @@ class Merchant_buckaroo extends Merchant_driver
          * @desc The amount to pay in the format 12.34 (always use a dot as a decimal separator)
          * @required true
          */
-        $request['Brq_amount']        = number_format($this->amount_cents() / 100, 2, ".", "");
+        $request['Brq_amount']        = $this->amount_dollars();
 
         /**
          * @desc The currency code (e.g. EUR, USD, GBP). Make sure the specified payment method supports the specified currency.
@@ -168,7 +168,7 @@ class Merchant_buckaroo extends Merchant_driver
          * If not supplied, the value specified in the Payment Plaza is used.
          * @required false
          */
-        $request['Brq_return'] = $this->param('return_url'); // Not Required
+        $request['Brq_return'] = $this->param('return_url');
 
         /**
          * @desc The return URL used when the consumer cancels the payment. Fallback is the value in brq_return
@@ -196,7 +196,7 @@ class Merchant_buckaroo extends Merchant_driver
          */
         $request['Brq_requestedservices'] = '';
 
-        $request['Brq_signature'] = $this->_calculateDigitalSignature($request);
+        $request['Brq_signature'] = $this->_calculate_digital_signature($request);
 
         return $request;
     }
@@ -205,22 +205,20 @@ class Merchant_buckaroo extends Merchant_driver
      * Calculate the Digital Signature.
      * Documentation used: Implementation Manual Buckaroo Payment Engine 3.0 (page 10, heading 6)
      *
-     * @param   array   $params
+     * @param   array   $origArray
      * @return  string  $signature
      */
-    private function _calculateDigitalSignature($params)
+    private function _calculate_digital_signature($origArray)
     {
-        $origArray = $params;
         unset($origArray['brq_signature'], $origArray['Brq_signature']);
 
-        $sortableArray = $this->_buckarooSort($origArray);
+        $sortableArray = $this->_buckaroo_sort($origArray);
 
         // turn into string and add the secret key to the end
         $signatureString = '';
         foreach ($sortableArray as $key => $value)
         {
-            $value = urldecode($value);
-            $signatureString .= $key . '=' . $value;
+            $signatureString .= $key . '=' . urldecode($value);
         }
         $signatureString .= $this->setting('secret_key');
 
@@ -236,7 +234,7 @@ class Merchant_buckaroo extends Merchant_driver
      * @param   array $array
      * @return  array
      */
-    private function _buckarooSort($array)
+    private function _buckaroo_sort($array)
     {
         $arrayToSort = array();
         $origArray   = array();
