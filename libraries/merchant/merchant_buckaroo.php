@@ -50,7 +50,7 @@ class Merchant_buckaroo extends Merchant_driver
     public function default_settings()
     {
         return array(
-            'websitekey' => '',     // Required // The unique key of the website for which the payment is placed.
+            'website_key' => '',     // Required // The unique key of the website for which the payment is placed.
             'secret_key' => '',     // Required // Pre-shared secret key which is used at calculating the digital signature
             'test_mode'  => TRUE,
         );
@@ -129,7 +129,7 @@ class Merchant_buckaroo extends Merchant_driver
          * @desc The unique key of the website for which the payment is placed.
          * @required true
          */
-        $request['Brq_websitekey']    = $this->setting('websitekey');
+        $request['Brq_websitekey']    = $this->setting('website_key');
 
         /**
          * @desc The amount to pay in the format 12.34 (always use a dot as a decimal separator)
