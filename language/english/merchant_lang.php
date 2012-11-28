@@ -12,6 +12,7 @@ $lang = array(
 	'merchant_dummy'						=> 'Dummy',
 	'merchant_eway'							=> 'eWay Hosted',
 	'merchant_eway_shared'					=> 'eWay Shared',
+	'merchant_eway_shared_uk'				=> 'eWay Shared UK',
 	'merchant_ideal'						=> 'iDEAL',
 	'merchant_inipay'						=> 'INIpay',
 	'merchant_gocardless'					=> 'GoCardless',
