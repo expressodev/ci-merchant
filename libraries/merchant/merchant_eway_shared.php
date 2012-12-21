@@ -25,17 +25,14 @@
  */
 
 /**
- * Merchant eWAY External Class
+ * Merchant eWAY Shared Class
  *
  * Payment processing using eWAY's Secure Hosted Page
- * Documentation: http://www.eway.com.au/_files/documentation/HostedPaymentPageDoc.pdf
+ * @see http://www.eway.com.au/_files/documentation/HostedPaymentPageDoc.pdf
  */
 
 class Merchant_eway_shared extends Merchant_driver
 {
-	const PROCESS_URL = 'https://au.ewaygateway.com/Request/';
-	const PROCESS_RETURN_URL = 'https://au.ewaygateway.com/Result/';
-
 	public function default_settings()
 	{
 		return array(
@@ -53,7 +50,7 @@ class Merchant_eway_shared extends Merchant_driver
 	public function purchase()
 	{
 		$request = $this->_build_purchase();
-		$response = $this->get_request(self::PROCESS_URL.'?'.http_build_query($request));
+		$response = $this->get_request($this->_process_url().'?'.http_build_query($request));
 		$xml = simplexml_load_string($response);
 
 		if ((string)$xml->Result == 'True')
@@ -78,10 +75,10 @@ class Merchant_eway_shared extends Merchant_driver
 			'AccessPaymentCode' => $payment_code,
 		);
 
-		$response = $this->get_request(self::PROCESS_RETURN_URL.'?'.http_build_query($data));
+		$response = $this->get_request($this->_process_return_url().'?'.http_build_query($data));
 		$xml = simplexml_load_string($response);
 
-		if ((string)$xml->TrxnStatus == 'True')
+		if (strtolower((string)$xml->TrxnStatus) == 'true')
 		{
 			return new Merchant_response(Merchant_response::COMPLETE, NULL, (string)$xml->TrxnNumber);
 		}
@@ -121,6 +118,16 @@ class Merchant_eway_shared extends Merchant_driver
 		$request['CustomerPhone'] = $this->param('phone');
 
 		return $request;
+	}
+
+	protected function _process_url()
+	{
+		return 'https://au.ewaygateway.com/Request/';
+	}
+
+	protected function _process_return_url()
+	{
+		return 'https://au.ewaygateway.com/Result/';
 	}
 }
 
