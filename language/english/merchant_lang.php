@@ -13,6 +13,7 @@ $lang = array(
 	'merchant_eway'							=> 'eWay Hosted',
 	'merchant_eway_shared'					=> 'eWay Shared',
 	'merchant_eway_shared_uk'				=> 'eWay Shared (UK)',
+	'merchant_firstdata'					=> 'First Data',
 	'merchant_ideal'						=> 'iDEAL',
 	'merchant_inipay'						=> 'INIpay',
 	'merchant_gocardless'					=> 'GoCardless',
@@ -78,6 +79,10 @@ $lang = array(
 	'merchant_solution_type_sole'			=> 'PayPal Account Optional',
 	'merchant_landing_page_billing'			=> 'Guest Checkout / Create Account',
 	'merchant_landing_page_login'			=> 'PayPal Account Login',
+	'merchant_host_url'						=> 'Host URL (usually live=secure.linkpt.net, test=staging.linkpt.net)',
+	'merchant_host_port'					=> 'Host Port (usually 1129)',
+	'merchant_keyfile_location'				=> 'Keyfile Location (/path/to/keyfile.pem)',
+	'merchant_store_no'						=> 'Store Number',
 
 	// payment gateway fields
 	'merchant_card_type'					=> 'Card Type',
