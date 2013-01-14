@@ -3,6 +3,11 @@
 CI-Merchant is a driver-based payment processing library built specifically for use in CodeIgniter web applications.
 It allows you to integrate any supported payment gateway using a consistent API.
 
+## Tala Payments
+
+CI-Merchant is currently being rewritten as a PHP 5.3+ Composer package. It's not finished yet, but if you like to
+live life on the bleeding edge, check out [Tala Payments](https://github.com/adrianmacneil/tala-payments).
+
 ## Requirements
 
  * CodeIgniter 2.0+
