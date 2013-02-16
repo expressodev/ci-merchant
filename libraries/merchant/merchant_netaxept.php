@@ -99,14 +99,14 @@ class Merchant_netaxept extends Merchant_driver
 		);
 
 		$response = $this->get_request($this->_process_url().'/Netaxept/Process.aspx?'.http_build_query($request));
-		$response_xml = $this->_decode_response($response);
+		$xml = $this->_decode_response($response);
 
-		if ((string)$response_xml->ResponseCode != 'OK')
+		if ((string)$xml->ResponseCode != 'OK')
 		{
-			return new Merchant_response(Merchant_response::FAILED, (string)$response->ResponseCode);
+			return new Merchant_response(Merchant_response::FAILED, (string)$xml->ResponseCode);
 		}
 
-		return new Merchant_response(Merchant_response::COMPLETE, (string)$response->ResponseCode, (string)$response->TransactionId);
+		return new Merchant_response(Merchant_response::COMPLETE, (string)$xml->ResponseCode, (string)$xml->TransactionId);
 	}
 
 	protected function _process_url()
