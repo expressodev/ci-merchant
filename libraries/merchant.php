@@ -258,6 +258,12 @@ class Merchant
 			}
 		}
 
+		// automatically fix incorrect 'uk' country code (which is hard coded in EE)
+		if (isset($params['country']) AND strtolower($params['country']) == 'uk')
+		{
+			$params['country'] = 'gb';
+		}
+
 		// support deprecated address parameter
 		if (isset($params['address']))
 		{

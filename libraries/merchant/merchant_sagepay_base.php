@@ -85,7 +85,7 @@ abstract class Merchant_sagepay_base extends Merchant_driver
 		$request['BillingCity'] = $this->param('city');
 		$request['BillingPostCode'] = $this->param('postcode');
 		$request['BillingState'] = $this->param('country') == 'us' ? $this->param('region') : '';
-		$request['BillingCountry'] = $this->param('country') == 'uk' ? 'gb' : $this->param('country');
+		$request['BillingCountry'] = $this->param('country');
 		$request['BillingPhone'] = $this->param('phone');
 
 		// shipping details
