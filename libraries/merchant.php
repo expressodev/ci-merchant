@@ -369,7 +369,11 @@ class Merchant_response
      */
     public function redirect()
     {
-        return $this->response->redirect();
+        if ($this->response->isRedirect()) {
+            $this->response->redirect();
+        }
+
+        return false;
     }
 }
 
