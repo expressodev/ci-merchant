@@ -87,12 +87,89 @@ abstract class Merchant_paypal_base extends Merchant_driver
 		return $request;
 	}
 
+
+		/**
+		PARAMS
+		 - REQUIRED 
+				'items' => array(
+						array(	'name'=>'',
+								'desc'=>'',
+								'amt'=>,
+								'qty'=>
+							)
+				),
+				'itemamt' => '0.00', //is calculated in library
+				'currency' => 'EUR',
+				'return_url' => 'http://.....',
+				'cancel_url' => 'http://.....',
+		
+		 - OPCIONAL
+		
+				'taxamt' => 0.00, 			//tax IVA
+				'shippingamt' => 0.00 , 	//shipping costs
+				'handlingamt' => 0.00, 		//handling costs
+				'insuranceamt' => 0.00, 	//insurance costs
+				'shipdiscamt' => 0.00, 		//discount amount (put it negative)
+				'amount' => '0.00', //is calculated in library
+
+		 */
+	
 	protected function _add_request_details(&$request, $action, $prefix = '')
 	{
 		$request[$prefix.'PAYMENTACTION'] = $action;
-		$request[$prefix.'AMT'] = $this->amount_dollars();
 		$request[$prefix.'CURRENCYCODE'] = $this->param('currency');
+		$request[$prefix.'AMT'] = $this->amount_dollars();
+		$request[$prefix.'ITEMAMT'] = $this->param('itemamt');
 		$request[$prefix.'DESC'] = $this->param('description');
+		
+		//items
+		$items = $this->param('items');
+		if (is_array($items) == 0) {
+			return false;
+		}
+		
+		//total amount
+		$amt = 0;
+		$list_prefix = 'L_PAYMENTREQUEST_0_';
+		
+		$list_index = 0;
+		//add all items to request
+		foreach ($items as $item){
+			$request[$list_prefix.'NAME'.$list_index] = $item['name'];
+			$request[$list_prefix.'DESC'.$list_index] = $item['desc'];
+			$request[$list_prefix.'AMT'.$list_index] = $item['amt'];
+			$request[$list_prefix.'QTY'.$list_index] = $item['qty'];
+			$amt += $item['amt'] * $item['qty'];
+			$list_index++;
+		}
+
+		//total amount , only items
+		$request[$prefix.'ITEMAMT'] = $amt;
+
+		//tax IVA
+		$amt += $this->param('taxamt');
+		$request['PAYMENTREQUEST_0_TAXAMT'] = $this->param('taxamt');
+		
+		//shipping costs
+		$amt += $this->param('shippingamt');
+		$request['PAYMENTREQUEST_0_SHIPPINGAMT'] = $this->param('shippingamt');
+		
+		//handling costs
+		$amt += $this->param('handlingamt');
+		$request['PAYMENTREQUEST_0_HANDLINGAMT'] = $this->param('handlingamt');
+		
+		//insurance costs
+		$amt += $this->param('insuranceamt');
+		$request['PAYMENTREQUEST_0_INSURANCEAMT'] = $this->param('insuranceamt');
+		
+		//discount amount (put it negative)
+		$amt += $this->param('shipdiscamt');
+		$request['PAYMENTREQUEST_0_SHIPDISCAMT'] = $this->param('shipdiscamt');
+		
+		
+		//total amount with extra costs
+		$request[$prefix.'AMT'] = $amt;
+
 	}
 
 	/**
