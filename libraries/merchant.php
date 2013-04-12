@@ -37,12 +37,14 @@ use Omnipay\Common\GatewayFactory;
  */
 class merchant
 {
+    protected $CI;
     protected $factory;
     protected $driver;
     protected $valid_drivers;
 
     public function __construct()
     {
+        $this->CI = get_instance();
         $this->factory = new GatewayFactory;
     }
 
@@ -115,6 +117,13 @@ class merchant
         if (null === $this->valid_drivers) {
             $this->valid_drivers = $this->factory->find();
             sort($this->valid_drivers);
+
+            // add gateway names to CI language library
+            foreach ($this->valid_drivers as $class) {
+                $gateway = $this->factory->create($class);
+                $this->CI->lang->language['merchant_'.$class] = $gateway->getName();
+                $this->CI->lang->language['merchant_'.strtolower($class)] = $gateway->getName();
+            }
         }
 
         return $this->valid_drivers;
