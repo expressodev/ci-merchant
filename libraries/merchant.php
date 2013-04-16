@@ -38,8 +38,8 @@ use Omnipay\Common\GatewayFactory;
 class merchant
 {
     protected $CI;
-    protected $factory;
-    protected $driver;
+    public $factory;
+    public $driver;
     protected $valid_drivers;
 
     public function __construct()
