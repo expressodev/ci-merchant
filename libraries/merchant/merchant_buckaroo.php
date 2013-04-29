@@ -72,18 +72,28 @@ class Merchant_buckaroo extends Merchant_driver
      */
     public function purchase_return()
     {
-        if (!$this->CI->input->post('brq_signature'))
+
+	    $post_vars = $_POST;
+        //loop trough post data
+	    foreach($post_vars as $key=>$value)
+	    {
+		    //lowercase all keys
+		    $post_vars[strtolower($key)] = $value;
+	    }
+
+        if (!isset($post_vars['brq_signature']))
         {
             return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
         }
+
 
         // Match incoming key
-        if ($this->_calculate_digital_signature($_POST) != $this->CI->input->post('brq_signature'))
+        if ($this->_calculate_digital_signature($_POST,TRUE) != $post_vars['brq_signature'])
         {
             return new Merchant_response(Merchant_response::FAILED, lang('merchant_invalid_response'));
         }
 
-        switch ( (int) $this->CI->input->post('brq_statuscode') )
+        switch ( (int) $post_vars['brq_statuscode'] )
         {
             // Success
             case self::BUCKAROO_STATUSCODE_PAYMENT_SUCCESS:
@@ -201,16 +211,37 @@ class Merchant_buckaroo extends Merchant_driver
         return $request;
     }
 
-    /**
-     * Calculate the Digital Signature.
-     * Documentation used: Implementation Manual Buckaroo Payment Engine 3.0 (page 10, heading 6)
-     *
-     * @param   array   $origArray
-     * @return  string  $signature
-     */
-    private function _calculate_digital_signature($origArray)
+	/**
+	 * Calculate the Digital Signature.
+	 * Documentation used: Implementation Manual Buckaroo Payment Engine 3.0 (page 10, heading 6)
+	 *
+	 * @param   array    $origArray
+	 * @param   bool $check_values Check for post data.
+	 *
+	 * @return  string  $signature
+	 */
+    private function _calculate_digital_signature($origArray, $check_values =FALSE)
     {
-        unset($origArray['brq_signature'], $origArray['Brq_signature']);
+	    $allowed_names = array();
+	    //if data came from a post request, the keys need to be checked.
+	    if($check_values)
+	    {
+			//check each key from the post data.
+	        foreach($_POST as $key => $value)
+	        {
+		        //check for lowercased key
+	            $current_key = strtolower($key);
+		        //check if key starts with brq , add or cust
+	            if(substr($current_key, 0, 3) == "brq" || substr($current_key, 0, 3) == "add" || substr($current_key, 0, 4) == "cust")
+	            {
+		            //add key to allowed list
+	                $allowed_names[] = $current_key;
+	            }
+	        }
+
+	    }
+
+        unset($origArray['brq_signature'], $origArray['Brq_signature'],$origArray['BRQ_SIGNATURE']);
 
         $sortableArray = $this->_buckaroo_sort($origArray);
 
@@ -218,8 +249,23 @@ class Merchant_buckaroo extends Merchant_driver
         $signatureString = '';
         foreach ($sortableArray as $key => $value)
         {
-            $signatureString .= $key . '=' . urldecode($value);
+	        if($check_values)
+	        {
+				//use the lower cased key
+				$lowered_key  = strtolower($key);
+				//only key from allowed_names can be used
+		        if(in_array($lowered_key, $allowed_names))
+		        {
+	                $signatureString .= $key . '=' . urldecode($value);
+		        }
+	        }
+	        //no check for post data needed.
+	        else
+	        {
+		        $signatureString .= $key . '=' . urldecode($value);
+	        }
         }
+
         $signatureString .= $this->setting('secret_key');
 
         // return the SHA1 encoded string for comparison
@@ -236,7 +282,7 @@ class Merchant_buckaroo extends Merchant_driver
      */
     private function _buckaroo_sort($array)
     {
-        $arrayToSort = array();
+	    $arrayToSort = array();
         $origArray   = array();
 
         foreach ($array as $key => $value)
