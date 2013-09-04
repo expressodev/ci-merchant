@@ -379,6 +379,8 @@ abstract class Merchant_driver
 	{
 		$this->CI =& get_instance();
 
+		$this->CI->lang->load('merchant', 'english');
+
 		// initialize default settings
 		foreach ($this->default_settings() as $key => $default)
 		{
