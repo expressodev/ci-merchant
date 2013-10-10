@@ -1,12 +1,15 @@
-# CI-Merchant Library
+## CI-Merchant is no longer supported. Use [Omnipay](https://github.com/adrianmacneil/omnipay) instead.
+
+CI-Merchant was rewritten as a PHP 5.3+ Composer package, which will work with any PHP framework, not just CodeIgniter.
+CI-Merchant is no longer being actively developed or supported, so you should not use it on new projects,
+and all existing projects should upgrade to Omnipay as soon as possible.
+
+For more details, see [Omnipay PHP Payment Processing Library](https://github.com/adrianmacneil/omnipay).
+
+## CI-Merchant Library
 
 CI-Merchant is a driver-based payment processing library built specifically for use in CodeIgniter web applications.
 It allows you to integrate any supported payment gateway using a consistent API.
-
-## The future of CI-Merchant: [Omnipay](https://github.com/adrianmacneil/omnipay)
-
-CI-Merchant is being rewritten as a PHP 5.3+ Composer package. Not all of the gateways are supported yet,
-but if your gateway is supported we recommend using [Omnipay](https://github.com/adrianmacneil/omnipay) instead.
 
 ## Requirements
 
