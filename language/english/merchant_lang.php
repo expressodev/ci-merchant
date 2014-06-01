@@ -25,6 +25,8 @@ $lang = array(
 	'merchant_paypal_express'				=> 'PayPal Express',
 	'merchant_paypal_pro'					=> 'PayPal Pro',
 	'merchant_rabo_omnikassa'				=> 'Rabo OmniKassa',
+	'merchant_realex_redirect'				=> 'RealEx Redirect',
+	'merchant_realex_remote'				=> 'RealEx Remote',
 	'merchant_sagepay_direct'				=> 'Sagepay Direct',
 	'merchant_sagepay_server'				=> 'Sagepay Server',
 	'merchant_stripe'						=> 'Stripe',
@@ -33,6 +35,7 @@ $lang = array(
 
 	// payment gateway settings
 	'merchant_api_login_id'					=> 'API Login ID',
+	'merchant_account'						=> 'Account',
 	'merchant_transaction_key'				=> 'Transaction Key',
 	'merchant_test_mode'					=> 'Test Mode',
 	'merchant_developer_mode'				=> 'Developer Mode',
